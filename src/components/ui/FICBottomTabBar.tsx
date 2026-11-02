@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import { useLanguage } from '../../context/LanguageContext';
 
 export interface FICBottomTabBarProps {
@@ -16,9 +16,13 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
   onNavigate,
   onOpenDrawer,
 }) => {
+  const { colors, isDark } = useTheme();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 4);
+
+  const activeColor = colors.primary;
+  const inactiveColor = colors.textMuted;
 
   const isHomeActive = currentRoute === 'Dashboard';
   const isTasksActive = currentRoute === 'Tasks' || currentRoute === 'TaskDetail';
@@ -46,7 +50,17 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
     currentRoute === 'MoreMenu';
 
   return (
-    <View style={[styles.container, { paddingBottom: bottomInset, height: 56 + bottomInset }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+          borderTopColor: colors.border,
+          paddingBottom: bottomInset,
+          height: 56 + bottomInset,
+        },
+      ]}
+    >
       {/* Tab 1: Home */}
       <TouchableOpacity
         style={styles.tabButton}
@@ -59,11 +73,21 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
         <Icon
           name="home"
           size={22}
-          color={isHomeActive ? '#1D4ED8' : '#64748B'}
+          color={isHomeActive ? activeColor : inactiveColor}
           style={styles.tabIcon}
         />
-        <Text style={[styles.label, isHomeActive && styles.activeLabel]}>{t('nav_home', 'Home')}</Text>
-        {isHomeActive && <View style={styles.activeIndicator} />}
+        <Text
+          style={[
+            styles.label,
+            { color: inactiveColor },
+            isHomeActive && { color: activeColor, fontWeight: '700' },
+          ]}
+        >
+          {t('nav_home', 'Home')}
+        </Text>
+        {isHomeActive && (
+          <View style={[styles.activeIndicator, { backgroundColor: activeColor }]} />
+        )}
       </TouchableOpacity>
 
       {/* Tab 2: Tasks */}
@@ -78,11 +102,21 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
         <Icon
           name="checkbox-marked-circle-outline"
           size={22}
-          color={isTasksActive ? '#1D4ED8' : '#64748B'}
+          color={isTasksActive ? activeColor : inactiveColor}
           style={styles.tabIcon}
         />
-        <Text style={[styles.label, isTasksActive && styles.activeLabel]}>{t('nav_tasks', 'Tasks')}</Text>
-        {isTasksActive && <View style={styles.activeIndicator} />}
+        <Text
+          style={[
+            styles.label,
+            { color: inactiveColor },
+            isTasksActive && { color: activeColor, fontWeight: '700' },
+          ]}
+        >
+          {t('nav_tasks', 'Tasks')}
+        </Text>
+        {isTasksActive && (
+          <View style={[styles.activeIndicator, { backgroundColor: activeColor }]} />
+        )}
       </TouchableOpacity>
 
       {/* Tab 3: Vendors Directory */}
@@ -97,11 +131,21 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
         <Icon
           name="storefront-outline"
           size={22}
-          color={isVendorsActive ? '#1D4ED8' : '#64748B'}
+          color={isVendorsActive ? activeColor : inactiveColor}
           style={styles.tabIcon}
         />
-        <Text style={[styles.label, isVendorsActive && styles.activeLabel]}>{t('nav_vendors', 'Vendors')}</Text>
-        {isVendorsActive && <View style={styles.activeIndicator} />}
+        <Text
+          style={[
+            styles.label,
+            { color: inactiveColor },
+            isVendorsActive && { color: activeColor, fontWeight: '700' },
+          ]}
+        >
+          {t('nav_vendors', 'Vendors')}
+        </Text>
+        {isVendorsActive && (
+          <View style={[styles.activeIndicator, { backgroundColor: activeColor }]} />
+        )}
       </TouchableOpacity>
 
       {/* Tab 4: Reports */}
@@ -116,11 +160,21 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
         <Icon
           name="file-document-outline"
           size={22}
-          color={isReportsActive ? '#1D4ED8' : '#64748B'}
+          color={isReportsActive ? activeColor : inactiveColor}
           style={styles.tabIcon}
         />
-        <Text style={[styles.label, isReportsActive && styles.activeLabel]}>{t('nav_reports', 'Reports')}</Text>
-        {isReportsActive && <View style={styles.activeIndicator} />}
+        <Text
+          style={[
+            styles.label,
+            { color: inactiveColor },
+            isReportsActive && { color: activeColor, fontWeight: '700' },
+          ]}
+        >
+          {t('nav_reports', 'Reports')}
+        </Text>
+        {isReportsActive && (
+          <View style={[styles.activeIndicator, { backgroundColor: activeColor }]} />
+        )}
       </TouchableOpacity>
 
       {/* Tab 5: Profile */}
@@ -135,11 +189,21 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
         <Icon
           name="account-circle-outline"
           size={22}
-          color={isProfileActive ? '#1D4ED8' : '#64748B'}
+          color={isProfileActive ? activeColor : inactiveColor}
           style={styles.tabIcon}
         />
-        <Text style={[styles.label, isProfileActive && styles.activeLabel]}>{t('nav_profile', 'Profile')}</Text>
-        {isProfileActive && <View style={styles.activeIndicator} />}
+        <Text
+          style={[
+            styles.label,
+            { color: inactiveColor },
+            isProfileActive && { color: activeColor, fontWeight: '700' },
+          ]}
+        >
+          {t('nav_profile', 'Profile')}
+        </Text>
+        {isProfileActive && (
+          <View style={[styles.activeIndicator, { backgroundColor: activeColor }]} />
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -148,18 +212,16 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     height: 64,
-    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
     paddingHorizontal: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 6,
   },
   tabButton: {
     flex: 1,
@@ -173,12 +235,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 11,
-    color: '#64748B',
     fontWeight: '500',
-  },
-  activeLabel: {
-    color: '#1D4ED8',
-    fontWeight: '700',
   },
   activeIndicator: {
     position: 'absolute',
@@ -186,7 +243,6 @@ const styles = StyleSheet.create({
     left: '25%',
     right: '25%',
     height: 3,
-    backgroundColor: '#1D4ED8',
     borderRadius: 2,
   },
 });

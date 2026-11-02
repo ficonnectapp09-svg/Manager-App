@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { Priority, Task, TaskStatus } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
@@ -34,6 +35,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -82,25 +84,18 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
   }, [fetchTasks]);
 
   useEffect(() => {
+    // Real-time synchronization across website & mobile (Module 2 & 12)
+    const unsubEntity = socketService.subscribe<Task>('task', () => {
+      fetchTasks(true);
+    });
     const unsub1 = socketService.subscribe<Task>('task.status.updated', (payload) => {
-      if (payload.data) {
-        setAllTasks((prev) =>
-          prev.map((t) => (t.id === payload.entityId ? { ...t, ...payload.data } : t))
-        );
-      }
+      fetchTasks(true);
     });
     const unsub2 = socketService.subscribe<Task>('task.updated', (payload) => {
-      if (payload.data) {
-        setAllTasks((prev) =>
-          prev.map((t) => (t.id === payload.entityId ? { ...t, ...payload.data } : t))
-        );
-      }
+      fetchTasks(true);
     });
     const unsub3 = socketService.subscribe<Task>('task.created', (payload) => {
-      if (payload.data) {
-        const newTask = payload.data;
-        setAllTasks((prev) => [newTask, ...prev.filter((t) => t.id !== payload.entityId)]);
-      }
+      fetchTasks(true);
     });
     const unsubReconnect = socketService.onReconnect(() => {
       fetchTasks(true);
@@ -292,7 +287,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => handleTaskPress(item)}
-        style={[styles.taskCard, { borderLeftColor: accentColor }]}
+        style={[styles.taskCard, { backgroundColor: colors.surface, borderColor: colors.border }, { borderLeftColor: accentColor }]}
         accessibilityRole="button"
         accessibilityLabel={`Task: ${item.title}`}
       >
@@ -303,15 +298,15 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
         </View>
 
         {/* Task Title */}
-        <Text style={styles.taskTitle} numberOfLines={2}>
+        <Text style={[styles.taskTitle, { color: colors.text }]} numberOfLines={2}>
           {item.title}
         </Text>
 
         {/* Sub Admin Assignment Badge */}
         {Boolean(item.createdByAdminName || item.assignedBy) && (
-          <View style={styles.subAdminTagRow}>
+          <View style={[styles.subAdminTagRow, { backgroundColor: isDark ? colors.surfaceElevated : '#EEF2FF' }]}>
             <Icon name="shield-account" size={13} color="#4338CA" />
-            <Text style={styles.subAdminTagText} numberOfLines={1}>
+            <Text style={[styles.subAdminTagText, { color: isDark ? colors.primary : '#4338CA' }]} numberOfLines={1}>
               Sub Admin: {item.createdByAdminName || item.assignedBy}
             </Text>
           </View>
@@ -322,14 +317,14 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
           <View style={styles.cardMetaCol}>
             <View style={styles.metaRow}>
               <Icon name="map-marker-outline" size={15} color="#64748B" />
-              <Text style={styles.metaText} numberOfLines={1}>
+              <Text style={[styles.metaText, { color: colors.textMuted }]} numberOfLines={1}>
                 {item.territory || 'Assigned Territory'}
               </Text>
             </View>
 
             <View style={[styles.metaRow, { marginTop: 4 }]}>
               <Icon name="calendar-blank-outline" size={15} color="#64748B" />
-              <Text style={styles.metaText} numberOfLines={1}>
+              <Text style={[styles.metaText, { color: colors.textMuted }]} numberOfLines={1}>
                 {formatDueDisplay(item.dueSla, item.createdAt)}
               </Text>
             </View>
@@ -360,7 +355,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
   const isFiltered = searchQuery.trim().length > 0 || selectedStatus !== 'ALL' || selectedPriority !== 'ALL';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Tasks"
@@ -380,6 +375,10 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
         keyExtractor={item => item.id}
         renderItem={renderTaskCard}
         contentContainerStyle={styles.listContent}
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -392,8 +391,8 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
           <View style={styles.headerSection}>
             {/* Page Title & Subtitle */}
             <View style={styles.titleContainer}>
-              <Text style={styles.pageTitle}>Tasks</Text>
-              <Text style={styles.pageSubtitle}>Track and complete your assigned tasks</Text>
+              <Text style={[styles.pageTitle, { color: colors.text }]}>Tasks</Text>
+              <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>Track and complete your assigned tasks</Text>
             </View>
 
             {/* 4-Metric Summary Cards Grid */}
@@ -485,12 +484,12 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
 
             {/* Search Input & Priority Filter Row */}
             <View style={styles.searchFilterRow}>
-              <View style={styles.searchBox}>
+              <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Icon name="magnify" size={18} color="#94A3B8" style={styles.searchIcon} />
                 <TextInput
-                  style={styles.searchInput}
+                  style={[styles.searchInput, { color: colors.text }]}
                   placeholder="Search tasks..."
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   returnKeyType="search"
@@ -507,7 +506,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
               </View>
 
               <TouchableOpacity
-                style={[styles.priorityFilterBtn, selectedPriority !== 'ALL' && styles.priorityFilterBtnActive]}
+                style={[styles.priorityFilterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, selectedPriority !== 'ALL' && styles.priorityFilterBtnActive]}
                 onPress={() => setShowPriorityModal(true)}
                 activeOpacity={0.75}
               >
@@ -518,7 +517,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
                 />
                 <Text
                   style={[
-                    styles.priorityBtnText,
+                    styles.priorityBtnText, { color: colors.text },
                     selectedPriority !== 'ALL' && { color: theme.colors.primary, fontWeight: '700' },
                   ]}
                   numberOfLines={1}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import { FICButton } from '../ui/FICButton';
 
 export interface FICEmptyStateProps {
@@ -24,14 +25,24 @@ export const FICEmptyState: React.FC<FICEmptyStateProps> = ({
   style,
   icon,
 }) => {
+  const { colors } = useTheme();
   const descText = message || description || 'There are no items matching your filter or assigned scope.';
   const actionHandler = onActionPress || onAction;
 
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        },
+        style,
+      ]}
+    >
       {icon}
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.description}>{descText}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>{descText}</Text>
       {actionTitle && actionHandler && (
         <FICButton title={actionTitle} onPress={actionHandler} style={styles.button} size="sm" />
       )}
@@ -44,26 +55,22 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xl,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
     marginVertical: theme.spacing.md,
   },
   title: {
     ...theme.typography.title,
-    color: theme.colors.text,
     marginTop: theme.spacing.sm,
     textAlign: 'center',
   },
   description: {
     ...theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
     marginTop: theme.spacing.xs,
-    marginBottom: theme.spacing.md,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   button: {
-    marginTop: theme.spacing.xs,
+    marginTop: theme.spacing.md,
   },
 });

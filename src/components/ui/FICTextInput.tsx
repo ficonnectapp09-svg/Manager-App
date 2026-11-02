@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface FICTextInputProps extends RNTextInputProps {
   label?: string;
@@ -38,6 +39,7 @@ export const FICTextInput: React.FC<FICTextInputProps> = ({
   isPasswordToggleable = false,
   ...rest
 }) => {
+  const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [isSecure, setIsSecure] = useState(secureTextEntry);
 
@@ -56,26 +58,34 @@ export const FICTextInput: React.FC<FICTextInputProps> = ({
   };
 
   const getBorderColor = () => {
-    if (error) return theme.colors.error;
-    if (isFocused) return theme.colors.primary;
-    return theme.colors.border;
+    if (error) return colors.error;
+    if (isFocused) return colors.primary;
+    return colors.border;
   };
 
   return (
     <View style={[styles.wrapper, containerStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
       <View
         style={[
           styles.inputContainer,
-          { borderColor: getBorderColor() },
-          isFocused && styles.focusedContainer,
-          disabled && styles.disabledContainer,
+          {
+            backgroundColor: isDark ? colors.inputBackground : colors.surface,
+            borderColor: getBorderColor(),
+          },
+          isFocused && { backgroundColor: isDark ? colors.inputBackground : colors.surface },
+          disabled && { backgroundColor: colors.divider, borderColor: colors.border },
         ]}
       >
         {leftIcon && <View style={styles.leftIconWrapper}>{leftIcon}</View>}
         <RNTextInput
-          style={[styles.input, inputStyle, disabled && styles.disabledInput]}
-          placeholderTextColor={theme.colors.textMuted}
+          style={[
+            styles.input,
+            { color: colors.text },
+            inputStyle,
+            disabled && { color: colors.textMuted },
+          ]}
+          placeholderTextColor={colors.textMuted}
           editable={!disabled}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -90,18 +100,18 @@ export const FICTextInput: React.FC<FICTextInputProps> = ({
             accessibilityLabel={isSecure ? 'Show password' : 'Hide password'}
             accessibilityRole="button"
           >
-            <Text style={styles.toggleText}>{isSecure ? 'SHOW' : 'HIDE'}</Text>
+            <Text style={[styles.toggleText, { color: colors.primary }]}>{isSecure ? 'SHOW' : 'HIDE'}</Text>
           </TouchableOpacity>
         ) : rightIcon ? (
           <View style={styles.rightIconWrapper}>{rightIcon}</View>
         ) : null}
       </View>
       {error ? (
-        <Text style={styles.errorText} accessibilityRole="alert">
+        <Text style={[styles.errorText, { color: colors.error }]} accessibilityRole="alert">
           {error}
         </Text>
       ) : helperText ? (
-        <Text style={styles.helperText}>{helperText}</Text>
+        <Text style={[styles.helperText, { color: colors.textSecondary }]}>{helperText}</Text>
       ) : null}
     </View>
   );
@@ -113,33 +123,20 @@ const styles = StyleSheet.create({
   },
   label: {
     ...theme.typography.label,
-    color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   inputContainer: {
     minHeight: theme.spacing.touchTargetMin,
     borderWidth: 1.5,
     borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.sm,
   },
-  focusedContainer: {
-    backgroundColor: theme.colors.surface,
-  },
   input: {
     flex: 1,
     ...theme.typography.body,
-    color: theme.colors.text,
     paddingVertical: theme.spacing.sm,
-  },
-  disabledContainer: {
-    backgroundColor: theme.colors.divider,
-    borderColor: theme.colors.border,
-  },
-  disabledInput: {
-    color: theme.colors.textMuted,
   },
   leftIconWrapper: {
     marginRight: theme.spacing.xs,
@@ -153,17 +150,14 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     ...theme.typography.caption,
-    color: theme.colors.primary,
     fontWeight: '700',
   },
   errorText: {
     ...theme.typography.caption,
-    color: theme.colors.error,
     marginTop: theme.spacing.xs,
   },
   helperText: {
     ...theme.typography.caption,
-    color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
   },
 });

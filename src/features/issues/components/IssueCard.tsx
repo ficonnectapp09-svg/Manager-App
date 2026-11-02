@@ -5,6 +5,7 @@ import { theme } from '../../../theme';
 import { FICCard } from '../../../components/ui/FICCard';
 import { FICStatusBadge } from '../../../components/ui/FICStatusBadge';
 import { FICPriorityBadge } from '../../../components/ui/FICPriorityBadge';
+import { useTheme } from '../../../hooks/useTheme';
 
 export interface IssueCardProps {
   issue: Issue;
@@ -26,6 +27,7 @@ export const formatDate = (isoString: string): string => {
 };
 
 export const IssueCard: React.FC<IssueCardProps> = ({ issue, onPress }) => {
+  const { colors, isDark } = useTheme();
   const subtitleParts = [];
   if (issue.vendorName) subtitleParts.push(issue.vendorName);
   if (issue.location) subtitleParts.push(issue.location);
@@ -40,20 +42,20 @@ export const IssueCard: React.FC<IssueCardProps> = ({ issue, onPress }) => {
     >
       <FICCard style={styles.card}>
         <View style={styles.headerRow}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
             {issue.title}
           </Text>
           <Text style={styles.chevron}>›</Text>
         </View>
 
         {subtitleText ? (
-          <Text style={styles.subtitle} numberOfLines={1}>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]} numberOfLines={1}>
             {subtitleText}
           </Text>
         ) : null}
 
         <View style={styles.footerRow}>
-          <Text style={styles.dateText}>{formatDate(issue.createdAt)}</Text>
+          <Text style={[styles.dateText, { color: colors.textMuted }]}>{formatDate(issue.createdAt)}</Text>
           <View style={styles.badgeGroup}>
             <FICPriorityBadge priority={issue.priority} />
             <FICStatusBadge status={issue.status} showIcon={true} />

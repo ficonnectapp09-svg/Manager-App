@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { Vendor } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
@@ -33,6 +34,7 @@ export const VendorVisitScreen: React.FC<VendorVisitScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -165,7 +167,7 @@ export const VendorVisitScreen: React.FC<VendorVisitScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Field Visit Form"
@@ -201,7 +203,7 @@ export const VendorVisitScreen: React.FC<VendorVisitScreenProps> = ({
           <View style={styles.decisionRow}>
             <TouchableOpacity
               style={[
-                styles.decisionBtn,
+                styles.decisionBtn, { backgroundColor: colors.surface, borderColor: colors.border },
                 interestDecision === 'INTERESTED' && styles.decisionBtnInterested,
               ]}
               onPress={() => setInterestDecision('INTERESTED')}
@@ -209,7 +211,7 @@ export const VendorVisitScreen: React.FC<VendorVisitScreenProps> = ({
               <Text style={styles.decisionEmoji}>👍</Text>
               <Text
                 style={[
-                  styles.decisionBtnText,
+                  styles.decisionBtnText, { color: colors.text },
                   interestDecision === 'INTERESTED' && styles.decisionBtnTextActive,
                 ]}
               >
@@ -258,7 +260,7 @@ export const VendorVisitScreen: React.FC<VendorVisitScreenProps> = ({
             </View>
 
             {/* Mode Selector */}
-            <View style={styles.modeTabs}>
+            <View style={[styles.modeTabs, { backgroundColor: isDark ? colors.surfaceElevated : theme.colors.background }]}>
               <TouchableOpacity
                 style={[styles.modeTab, reportMode === 'TEXT' && styles.activeModeTab]}
                 onPress={() => setReportMode('TEXT')}
@@ -315,7 +317,7 @@ export const VendorVisitScreen: React.FC<VendorVisitScreenProps> = ({
                   </View>
                 ) : (
                   <View style={styles.readyRecordState}>
-                    <Text style={styles.recordHelpText}>
+                    <Text style={[styles.recordHelpText, { color: colors.textMuted }]}>
                       Tap below to record an audio exception report explaining why the vendor declined.
                     </Text>
                     <FICButton

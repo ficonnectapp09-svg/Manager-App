@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface DirectoryHomeScreenProps {
   onOpenDrawer?: () => void;
@@ -23,6 +24,7 @@ export const DirectoryHomeScreen: React.FC<DirectoryHomeScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
 
   const territoryScopeText =
@@ -65,7 +67,7 @@ export const DirectoryHomeScreen: React.FC<DirectoryHomeScreenProps> = ({
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       <FICHeader
@@ -114,14 +116,14 @@ export const DirectoryHomeScreen: React.FC<DirectoryHomeScreenProps> = ({
               </View>
 
               <View style={styles.cardBody}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>{item.subtitle}</Text>
               </View>
 
-              <View style={styles.cardFooter}>
-                <Text style={styles.cardStatsText}>{item.stats}</Text>
-                <View style={styles.actionPill}>
-                  <Text style={styles.actionPillText}>Open</Text>
+              <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
+                <Text style={[styles.cardStatsText, { color: colors.textMuted }]}>{item.stats}</Text>
+                <View style={[styles.actionPill, isDark && { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
+                  <Text style={[styles.actionPillText, isDark && { color: colors.primary }]}>Open</Text>
                   <Icon name="chevron-right" size={16} color="#1D4ED8" />
                 </View>
               </View>

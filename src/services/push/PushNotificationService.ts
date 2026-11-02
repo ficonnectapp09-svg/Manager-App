@@ -1,32 +1,12 @@
 /**
  * Real-Time Firebase Cloud Messaging (FCM) Push Notification Service
  */
+import { Platform, PermissionsAndroid } from 'react-native';
 import { AppNotification, NotificationCategory, Priority } from '../../types';
 import { apiClient } from '../api/ApiClient';
 import { ENV } from '../../constants/env';
 
-let Platform: any = { OS: 'android', Version: 33 };
-let PermissionsAndroid: any = {
-  PERMISSIONS: { POST_NOTIFICATIONS: 'android.permission.POST_NOTIFICATIONS' },
-  RESULTS: { GRANTED: 'granted', DENIED: 'denied', NEVER_ASK_AGAIN: 'never_ask_again' },
-  check: async () => true,
-  request: async () => 'granted',
-};
-
-try {
-  const RN = require('react-native');
-  if (RN.Platform) Platform = RN.Platform;
-  if (RN.PermissionsAndroid) PermissionsAndroid = RN.PermissionsAndroid;
-} catch {
-  // Degrades gracefully in non-RN testing environments
-}
-
 let messagingModule: any = null;
-try {
-  messagingModule = require('@react-native-firebase/messaging').default;
-} catch (e) {
-  // Gracefully falls back when native Firebase is being configured
-}
 
 export type PermissionStatus = 'granted' | 'denied' | 'never_ask_again';
 

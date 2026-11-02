@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { Issue, IssueStatus } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
@@ -33,6 +34,7 @@ export const IssuesScreen: React.FC<IssuesScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -146,7 +148,7 @@ export const IssuesScreen: React.FC<IssuesScreenProps> = ({
   const isFiltered = searchQuery.trim().length > 0 || selectedFilter !== 'ALL';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Issues"
@@ -187,13 +189,13 @@ export const IssuesScreen: React.FC<IssuesScreenProps> = ({
               return (
                 <TouchableOpacity
                   key={chip.id}
-                  style={[styles.chip, isSelected && styles.chipActive]}
+                  style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, isSelected && styles.chipActive]}
                   onPress={() => setSelectedFilter(chip.id)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                 >
-                  <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                  <Text style={[styles.chipText, { color: colors.textSecondary }, isSelected && styles.chipTextActive]}>
                     {chip.label}
                   </Text>
                 </TouchableOpacity>

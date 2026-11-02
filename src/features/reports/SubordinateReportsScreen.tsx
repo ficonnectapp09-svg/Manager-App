@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { DailyReport } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICTextInput } from '../../components/ui/FICTextInput';
@@ -34,6 +35,7 @@ export const SubordinateReportsScreen: React.FC<SubordinateReportsScreenProps> =
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -136,7 +138,7 @@ export const SubordinateReportsScreen: React.FC<SubordinateReportsScreenProps> =
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       <FICHeader

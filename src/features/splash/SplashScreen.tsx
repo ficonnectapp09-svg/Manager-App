@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ASSETS } from '../../assets/logo';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 const { colors, typography, spacing } = theme;
 
@@ -21,6 +22,7 @@ export interface SplashScreenProps {
 export const SplashScreen: React.FC<SplashScreenProps> = ({
   loadingMessage = 'Loading...',
 }) => {
+  const { colors, isDark } = useTheme();
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.9)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -48,13 +50,13 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
   }, [logoOpacity, logoScale, textOpacity]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar
-        barStyle="dark-content"
+        barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={colors.background}
         translucent={false}
       />
-      <View style={styles.container} testID="splash-screen">
+      <View style={[styles.container, { backgroundColor: colors.background }]} testID="splash-screen">
         <View style={styles.content}>
           <Animated.View
             style={[
@@ -74,14 +76,14 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           </Animated.View>
 
           <Animated.View style={{ opacity: textOpacity, alignItems: 'center' }}>
-            <Text style={styles.title}>Forge India Connect</Text>
-            <Text style={styles.subtitle}>Manager App</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Forge India Connect</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Manager App</Text>
           </Animated.View>
         </View>
 
         <View style={styles.footer}>
           <ActivityIndicator size="small" color={colors.primary} style={styles.spinner} />
-          <Text style={styles.loadingText}>{loadingMessage}</Text>
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>{loadingMessage}</Text>
         </View>
       </View>
     </SafeAreaView>

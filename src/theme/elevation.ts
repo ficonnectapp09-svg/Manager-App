@@ -29,3 +29,31 @@ export const elevation = {
     shadowRadius: 8,
   },
 };
+
+export const darkElevation: typeof elevation = {
+  none: {
+    elevation: 0,
+    shadowColor: 'transparent',
+  },
+  card: {
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  dropdown: {
+    elevation: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  modal: {
+    elevation: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+  },
+};

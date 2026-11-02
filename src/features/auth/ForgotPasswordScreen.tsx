@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICCard } from '../../components/ui/FICCard';
 import { FICTextInput } from '../../components/ui/FICTextInput';
@@ -18,6 +19,7 @@ export interface ForgotPasswordScreenProps {
 }
 
 export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBack }) => {
+  const { colors, isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -36,7 +38,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Reset Password"
@@ -46,16 +48,16 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
 
       <View style={styles.container}>
         <FICCard style={styles.card}>
-          <Text style={styles.title}>Forgot Password?</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.primary }]}>Forgot Password?</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Enter your registered FIC corporate email. We'll send instructions to reset your account password.
           </Text>
 
           {isSent ? (
             <View style={styles.sentContainer}>
               <Text style={styles.sentIcon}>✉️</Text>
-              <Text style={styles.sentTitle}>Reset Link Dispatched</Text>
-              <Text style={styles.sentDesc}>
+              <Text style={[styles.sentTitle, { color: colors.primary }]}>Reset Link Dispatched</Text>
+              <Text style={[styles.sentDesc, { color: colors.textSecondary }]}>
                 Instructions have been sent to {email}. Check your inbox or reach out to IT admin support.
               </Text>
               <FICButton

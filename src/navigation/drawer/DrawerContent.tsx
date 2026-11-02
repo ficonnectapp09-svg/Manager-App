@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { FICAvatar } from '../../components/ui/FICAvatar';
 import { ASSETS } from '../../assets/logo';
@@ -58,7 +59,6 @@ export const DRAWER_SECTIONS: DrawerSectionConfig[] = [
     sectionTitle: 'REPORTS & PERFORMANCE',
     items: [
       { key: 'Reports', label: 'Daily & Field Reports', iconName: 'file-document-outline' },
-      { key: 'SubordinateReports', label: 'Subordinate Reports', iconName: 'chart-box-outline' },
       { key: 'Leaderboard', label: 'Territory Leaderboard', iconName: 'trophy-outline' },
     ],
   },
@@ -84,6 +84,7 @@ export const DRAWER_MENU_ITEMS = DRAWER_SECTIONS.flatMap(section =>
 
 export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNavigate }) => {
   const { manager, logout } = useAuth();
+  const { colors, isDark } = useTheme();
   const [unreadCount, setUnreadCount] = useState<number>(0);
 
   useEffect(() => {
@@ -109,9 +110,17 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
     (manager?.stateId === 'st-tn-01' ? 'Tamil Nadu' : 'Indore District');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: isDark ? colors.surface : '#FFFFFF' }]}>
       {/* Top Brand Logo Bar */}
-      <View style={styles.brandBar}>
+      <View
+        style={[
+          styles.brandBar,
+          {
+            backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
         <Image
           source={ASSETS.logo}
           style={styles.brandLogo}
@@ -121,7 +130,15 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
       </View>
 
       {/* Header Profile Summary */}
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: isDark ? colors.surfaceElevated : '#0B4A8B',
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
         <FICAvatar name={manager?.name || 'Manager'} size={48} />
         <View style={styles.profileText}>
           <Text style={styles.name} numberOfLines={1}>
@@ -130,19 +147,22 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
           <Text style={styles.role}>
             {manager?.role ? String(manager.role).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'FIELD MANAGER'}
           </Text>
-          <Text style={styles.territoryScopeText} numberOfLines={1}>
+          <Text style={[styles.territoryScopeText, { color: isDark ? colors.textSecondary : '#E2E8F0' }]} numberOfLines={1}>
             📍 {territoryScope}
           </Text>
         </View>
       </View>
 
       {/* Navigation Sections */}
-      <ScrollView style={styles.menuList} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={[styles.menuList, { backgroundColor: isDark ? colors.background : '#FFFFFF' }]}
+        showsVerticalScrollIndicator={false}
+      >
         {DRAWER_SECTIONS.map((section, sIdx) => (
-          <View key={`section-${sIdx}`} style={styles.sectionContainer}>
+          <View key={`section-${sIdx}`} style={[styles.sectionContainer, { borderBottomColor: colors.border }]}>
             {section.sectionTitle ? (
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitleText}>{section.sectionTitle}</Text>
+                <Text style={[styles.sectionTitleText, { color: colors.textMuted }]}>{section.sectionTitle}</Text>
               </View>
             ) : null}
 
@@ -156,8 +176,17 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
                   key={item.key}
                   style={[
                     styles.menuItem,
-                    isActive && styles.activeItem,
-                    isDirectorySection && styles.directoryItem,
+                    isActive && [
+                      styles.activeItem,
+                      {
+                        backgroundColor: isDark ? colors.surfaceElevated : '#EFF6FF',
+                        borderLeftColor: colors.primary,
+                      },
+                    ],
+                    isDirectorySection && !isActive && [
+                      styles.directoryItem,
+                      { backgroundColor: isDark ? 'transparent' : '#FAFCFF' },
+                    ],
                   ]}
                   activeOpacity={0.7}
                   onPress={() => onNavigate(item.key)}
@@ -167,8 +196,12 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
                   <View
                     style={[
                       styles.iconCircle,
-                      isActive && styles.activeIconCircle,
-                      isDirectorySection && !isActive && styles.directoryIconCircle,
+                      { backgroundColor: isDark ? colors.surfaceElevated : '#F1F5F9' },
+                      isActive && [styles.activeIconCircle, { backgroundColor: colors.primary }],
+                      isDirectorySection && !isActive && [
+                        styles.directoryIconCircle,
+                        { backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#DBEAFE' },
+                      ],
                     ]}
                   >
                     <Icon
@@ -176,23 +209,37 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
                       size={20}
                       color={
                         isActive
-                          ? '#FFFFFF'
+                          ? (isDark ? '#0B1220' : '#FFFFFF')
                           : isDirectorySection
-                          ? '#1D4ED8'
-                          : '#475569'
+                          ? colors.primary
+                          : colors.textSecondary
                       }
                     />
                   </View>
 
                   <View style={styles.itemTextCol}>
-                    <Text style={[styles.itemLabel, isActive && styles.activeLabel]}>
+                    <Text
+                      style={[
+                        styles.itemLabel,
+                        { color: colors.text },
+                        isActive && [styles.activeLabel, { color: colors.primary }],
+                      ]}
+                    >
                       {item.label}
                     </Text>
                   </View>
 
                   {item.badge && !isActive ? (
-                    <View style={styles.tagBadge}>
-                      <Text style={styles.tagBadgeText}>{item.badge}</Text>
+                    <View
+                      style={[
+                        styles.tagBadge,
+                        {
+                          backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#EFF6FF',
+                          borderColor: isDark ? colors.border : '#DBEAFE',
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.tagBadgeText, { color: colors.primary }]}>{item.badge}</Text>
                     </View>
                   ) : null}
 
@@ -205,7 +252,7 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
                   <Icon
                     name="chevron-right"
                     size={16}
-                    color={isActive ? '#1D4ED8' : '#CBD5E1'}
+                    color={isActive ? colors.primary : colors.textMuted}
                     style={styles.chevron}
                   />
                 </TouchableOpacity>
@@ -216,16 +263,30 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
       </ScrollView>
 
       {/* Footer Logout */}
-      <View style={styles.footer}>
+      <View
+        style={[
+          styles.footer,
+          {
+            backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
         <TouchableOpacity
-          style={styles.logoutButton}
+          style={[
+            styles.logoutButton,
+            {
+              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2',
+              borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FEE2E2',
+            },
+          ]}
           activeOpacity={0.75}
           onPress={logout}
           accessibilityRole="button"
           accessibilityLabel="Logout"
         >
-          <Icon name="logout" size={18} color="#DC2626" style={{ marginRight: 8 }} />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Icon name="logout" size={18} color={colors.error} style={{ marginRight: 8 }} />
+          <Text style={[styles.logoutText, { color: colors.error }]}>Logout</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -235,16 +296,13 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   brandBar: {
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: theme.spacing.md,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
   },
   brandLogo: {
     width: 150,
@@ -256,9 +314,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0B4A8B',
     borderBottomWidth: 1,
-    borderBottomColor: '#07325F',
   },
   profileText: {
     marginLeft: 12,
@@ -280,17 +336,14 @@ const styles = StyleSheet.create({
   },
   territoryScopeText: {
     fontSize: 11,
-    color: '#E2E8F0',
     marginTop: 2,
   },
   menuList: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   sectionContainer: {
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
   },
   sectionHeaderRow: {
     paddingHorizontal: 16,
@@ -300,7 +353,6 @@ const styles = StyleSheet.create({
   sectionTitleText: {
     fontSize: 10.5,
     fontWeight: '800',
-    color: '#94A3B8',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
@@ -313,54 +365,40 @@ const styles = StyleSheet.create({
     marginVertical: 1,
     borderRadius: 10,
   },
-  directoryItem: {
-    backgroundColor: '#FAFCFF',
-  },
+  directoryItem: {},
   activeItem: {
-    backgroundColor: '#EFF6FF',
     borderLeftWidth: 3,
-    borderLeftColor: '#1D4ED8',
   },
   iconCircle: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  directoryIconCircle: {
-    backgroundColor: '#DBEAFE',
-  },
-  activeIconCircle: {
-    backgroundColor: '#1D4ED8',
-  },
+  directoryIconCircle: {},
+  activeIconCircle: {},
   itemTextCol: {
     flex: 1,
   },
   itemLabel: {
     fontSize: 13.5,
     fontWeight: '600',
-    color: '#1E293B',
   },
   activeLabel: {
-    color: '#1D4ED8',
     fontWeight: '700',
   },
   tagBadge: {
-    backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
     marginRight: 6,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
   },
   tagBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#1D4ED8',
   },
   badgeCircle: {
     backgroundColor: '#EF4444',
@@ -383,8 +421,6 @@ const styles = StyleSheet.create({
   footer: {
     padding: 14,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    backgroundColor: '#FFFFFF',
   },
   logoutButton: {
     flexDirection: 'row',
@@ -392,14 +428,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 42,
     borderRadius: 10,
-    backgroundColor: '#FEF2F2',
     borderWidth: 1,
-    borderColor: '#FEE2E2',
   },
   logoutText: {
     fontSize: 13.5,
     fontWeight: '700',
-    color: '#DC2626',
   },
 });
-

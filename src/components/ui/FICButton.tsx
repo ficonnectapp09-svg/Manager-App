@@ -9,6 +9,7 @@ import {
   TouchableOpacityProps,
 } from 'react-native';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'destructive' | 'text';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -38,6 +39,7 @@ export const FICButton: React.FC<FICButtonProps> = ({
   onPress,
   ...rest
 }) => {
+  const { colors, isDark } = useTheme();
   const [isPressed, setIsPressed] = useState(false);
   const isInteractive = !disabled && !loading;
 
@@ -51,39 +53,39 @@ export const FICButton: React.FC<FICButtonProps> = ({
       case 'primary':
         base = {
           ...base,
-          backgroundColor: isPressed ? theme.colors.primaryPressed : theme.colors.primary,
+          backgroundColor: isPressed ? colors.primaryPressed : (isDark ? colors.primary : '#0B4A8B'),
         };
         break;
       case 'secondary':
         base = {
           ...base,
-          backgroundColor: isPressed ? theme.colors.secondaryPressed : theme.colors.secondary,
+          backgroundColor: isPressed ? colors.secondaryPressed : colors.secondary,
         };
         break;
       case 'outline':
         base = {
           ...base,
-          backgroundColor: isPressed ? theme.colors.surfaceSecondary : 'transparent',
+          backgroundColor: isPressed ? (isDark ? colors.surfaceElevated : colors.surfaceSecondary) : 'transparent',
           borderWidth: 1,
-          borderColor: theme.colors.primary,
+          borderColor: colors.primary,
         };
         break;
       case 'destructive':
         base = {
           ...base,
-          backgroundColor: isPressed ? '#B91C1C' : theme.colors.error,
+          backgroundColor: isPressed ? '#B91C1C' : colors.error,
         };
         break;
       case 'text':
         base = {
           ...base,
-          backgroundColor: isPressed ? theme.colors.surfaceSecondary : 'transparent',
+          backgroundColor: isPressed ? (isDark ? colors.surfaceElevated : colors.surfaceSecondary) : 'transparent',
         };
         break;
     }
 
     if (disabled) {
-      base = { ...base, backgroundColor: theme.colors.disabled, opacity: 0.6, borderColor: 'transparent' };
+      base = { ...base, backgroundColor: colors.disabled, opacity: 0.6, borderColor: 'transparent' };
     }
 
     return base;
@@ -97,24 +99,33 @@ export const FICButton: React.FC<FICButtonProps> = ({
 
     switch (variant) {
       case 'primary':
+        base = { ...base, color: isDark ? '#0B1220' : '#FFFFFF', fontWeight: '700' };
+        break;
       case 'destructive':
-        base = { ...base, color: theme.colors.surface };
+        base = { ...base, color: '#FFFFFF' };
         break;
       case 'secondary':
-        base = { ...base, color: theme.colors.text };
+        base = { ...base, color: isDark ? '#0B1220' : '#0F172A', fontWeight: '700' };
         break;
       case 'outline':
       case 'text':
-        base = { ...base, color: theme.colors.primary };
+        base = { ...base, color: colors.primary };
         break;
     }
 
     if (disabled) {
-      base = { ...base, color: theme.colors.surface };
+      base = { ...base, color: '#FFFFFF' };
     }
 
     return base;
   };
+
+  const spinnerColor =
+    variant === 'primary'
+      ? (isDark ? '#0B1220' : '#FFFFFF')
+      : variant === 'destructive'
+      ? '#FFFFFF'
+      : colors.primary;
 
   return (
     <TouchableOpacity
@@ -132,7 +143,7 @@ export const FICButton: React.FC<FICButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' || variant === 'destructive' ? theme.colors.surface : theme.colors.primary}
+          color={spinnerColor}
         />
       ) : (
         <>

@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { Vendor, VendorCategory, VendorStatus } from '../../types';
 import { maskBankAccount, maskGSTIN, maskPAN } from '../../utils/masking';
@@ -53,6 +54,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
   initialCategory,
   initialPhotoUri,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [submissionErrorModal, setSubmissionErrorModal] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
@@ -480,7 +482,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Vendor Onboarding"
@@ -558,11 +560,11 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
       >
         {/* ================= STEP 1: BUSINESS ================= */}
         {currentStep === 1 && (
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={styles.cardHeaderTitle}>Step 1 of 5 — Business</Text>
 
             {/* --- INITIAL QUESTION: INTERESTED OR NOT --- */}
-            <Text style={styles.fieldLabel}>Merchant Intent / Interest Status *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Merchant Intent / Interest Status *</Text>
             <Text style={styles.fieldHelper}>
               Confirm whether the merchant is interested in Forge Connect QR & Onboarding
             </Text>
@@ -698,7 +700,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
             ) : (
               /* IF INTERESTED: STANDARD BUSINESS FORM */
               <>
-                <Text style={styles.fieldLabel}>Business / Shop Name *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business / Shop Name *</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="e.g. Spice Route Bistro"
@@ -707,7 +709,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   />
                 </View>
 
-                <Text style={styles.fieldLabel}>Shop / Brand Logo</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Shop / Brand Logo</Text>
                 {logoImageUri ? (
                   <View style={styles.attachedImageCard}>
                     <Image source={{ uri: logoImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
@@ -748,7 +750,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   </TouchableOpacity>
                 )}
 
-                <Text style={styles.fieldLabel}>Product / Service Category *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Product / Service Category *</Text>
                 <TouchableOpacity
                   style={[styles.dropdownInput, { marginBottom: 10 }]}
                   onPress={() => setShowCategoryDropdown(true)}
@@ -760,7 +762,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   <Icon name="chevron-down" size={20} color="#64748B" />
                 </TouchableOpacity>
 
-                <Text style={styles.fieldLabel}>Business Phone *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business Phone *</Text>
                 <View style={[styles.inputContainer, { marginBottom: 10 }]}>
                   <TextInputWrapper
                     placeholder="10-digit mobile number"
@@ -770,7 +772,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   />
                 </View>
 
-                <Text style={styles.fieldLabel}>Email Address *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Email Address *</Text>
                 <View style={[styles.inputContainer, { marginBottom: 10 }]}>
                   <TextInputWrapper
                     placeholder="vendor@business.com"
@@ -781,7 +783,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   />
                 </View>
 
-                <Text style={styles.fieldLabel}>Business Website (Optional)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business Website (Optional)</Text>
                 <View style={[styles.inputContainer, { marginBottom: 10 }]}>
                   <TextInputWrapper
                     placeholder="https://yourwebsite.com"
@@ -791,7 +793,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   />
                 </View>
 
-                <Text style={styles.fieldLabel}>Business Address *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business Address *</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="Street, Area, City"
@@ -800,7 +802,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   />
                 </View>
 
-                <Text style={styles.fieldLabel}>Business Pincode *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business Pincode *</Text>
                 <View style={[styles.inputContainer, { marginBottom: 12 }]}>
                   <TextInputWrapper
                     placeholder="6-digit postal pincode (e.g. 636701)"
@@ -811,7 +813,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   />
                 </View>
 
-                <Text style={styles.fieldLabel}>Business Operating Hours *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business Operating Hours *</Text>
                 <View style={styles.operatingHoursCard}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
                     <Icon name="clock-outline" size={22} color="#EA580C" style={{ marginRight: 8 }} />
@@ -833,7 +835,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.fieldLabel}>Business Description</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business Description</Text>
                 <View style={[styles.inputContainer, { height: 75, alignItems: 'flex-start' }]}>
                   <TextInputWrapper
                     placeholder="Brief description of merchandise, customer base, etc."
@@ -851,10 +853,10 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
         {/* ================= STEP 2: OWNER ================= */}
         {currentStep === 2 && (
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={styles.cardHeaderTitle}>Step 2 of 5 — Owner</Text>
 
-            <Text style={styles.fieldLabel}>Owner / Contact Person Name *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Owner / Contact Person Name *</Text>
             <View style={styles.inputContainer}>
               <TextInputWrapper
                 placeholder="Full legal name"
@@ -865,7 +867,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
             <View style={styles.twoColumnRow}>
               <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.fieldLabel}>Alternate Phone (Optional)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Alternate Phone (Optional)</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="Alternate number"
@@ -877,7 +879,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
 
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text style={styles.fieldLabel}>Agent Name (Optional)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Agent Name (Optional)</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="Agent name"
@@ -888,7 +890,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
             </View>
 
-            <Text style={styles.fieldLabel}>Co-partner Name (Optional)</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Co-partner Name (Optional)</Text>
             <View style={styles.inputContainer}>
               <TextInputWrapper
                 placeholder="Co-partner name"
@@ -899,7 +901,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
             <View style={styles.twoColumnRow}>
               <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.fieldLabel}>Account Password *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Account Password *</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="Min. 8 characters"
@@ -911,7 +913,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
 
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text style={styles.fieldLabel}>Confirm Password *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Confirm Password *</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="Re-enter password"
@@ -927,11 +929,11 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
         {/* ================= STEP 3: DOCUMENTS ================= */}
         {currentStep === 3 && (
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={styles.cardHeaderTitle}>Step 3 of 5 — Documents</Text>
 
             {/* PAN Number & PAN Card Upload */}
-            <Text style={styles.fieldLabel}>PAN Number *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>PAN Number *</Text>
             <View style={styles.inputContainer}>
               <TextInputWrapper
                 placeholder="E.G. ABCDE1234F"
@@ -946,7 +948,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </Text>
             )}
 
-            <Text style={styles.fieldLabel}>PAN Card Document / Photo</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>PAN Card Document / Photo</Text>
             {panImageUri ? (
               <View style={styles.attachedImageCard}>
                 <Image source={{ uri: panImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
@@ -983,7 +985,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               />
             </View>
 
-            <Text style={styles.fieldLabel}>Aadhaar Card Document / Photo</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Aadhaar Card Document / Photo</Text>
             {aadhaarImageUri ? (
               <View style={styles.attachedImageCard}>
                 <Image source={{ uri: aadhaarImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
@@ -1009,7 +1011,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </TouchableOpacity>
             )}
 
-            <Text style={styles.fieldLabel}>GST Number</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>GST Number</Text>
             <View style={styles.inputContainer}>
               <TextInputWrapper
                 placeholder="E.G. 29ABCDE1234F1Z5"
@@ -1024,7 +1026,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </Text>
             )}
 
-            <Text style={styles.fieldLabel}>Company Registration Number (Optional)</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Company Registration Number (Optional)</Text>
             <View style={styles.inputContainer}>
               <TextInputWrapper
                 placeholder="Optional"
@@ -1035,7 +1037,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
             <View style={styles.twoColumnRow}>
               <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.fieldLabel}>GST Status</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>GST Status</Text>
                 <TouchableOpacity
                   style={styles.dropdownInput}
                   onPress={() => setShowGstDropdown(true)}
@@ -1047,7 +1049,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
 
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text style={styles.fieldLabel}>MSME Status</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>MSME Status</Text>
                 <TouchableOpacity
                   style={styles.dropdownInput}
                   onPress={() => setShowMsmeDropdown(true)}
@@ -1059,7 +1061,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
             </View>
 
-            <Text style={styles.fieldLabel}>Business License / Document</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business License / Document</Text>
             {licenseImageUri ? (
               <View style={styles.attachedImageCard}>
                 <Image source={{ uri: licenseImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
@@ -1085,7 +1087,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </TouchableOpacity>
             )}
 
-            <Text style={styles.fieldLabel}>Additional KYC Documents (PDF or Images, max 5MB)</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Additional KYC Documents (PDF or Images, max 5MB)</Text>
             {kycImageUri ? (
               <View style={styles.attachedImageCard}>
                 <Image source={{ uri: kycImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
@@ -1117,10 +1119,10 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
         {/* ================= STEP 4: BANK ================= */}
         {currentStep === 4 && (
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={styles.cardHeaderTitle}>Step 4 of 5 — Bank</Text>
 
-            <Text style={styles.fieldLabel}>Account Holder Name *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Account Holder Name *</Text>
             <View style={styles.inputContainer}>
               <TextInputWrapper
                 placeholder="e.g. Spice Route Bistro LLP"
@@ -1131,7 +1133,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
             <View style={styles.twoColumnRow}>
               <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.fieldLabel}>Bank Name *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Bank Name *</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="e.g. HDFC Bank"
@@ -1142,7 +1144,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
 
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text style={styles.fieldLabel}>Bank Branch</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Bank Branch</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="Branch name"
@@ -1155,7 +1157,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
             <View style={styles.twoColumnRow}>
               <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.fieldLabel}>Bank Street (Optional)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Bank Street (Optional)</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="Street address"
@@ -1166,7 +1168,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
 
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text style={styles.fieldLabel}>Bank City (Optional)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Bank City (Optional)</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="City"
@@ -1179,7 +1181,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
             <View style={styles.twoColumnRow}>
               <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.fieldLabel}>Account Number *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Account Number *</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="Bank Account Number"
@@ -1196,7 +1198,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
 
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text style={styles.fieldLabel}>IFSC Code *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>IFSC Code *</Text>
                 <View style={styles.inputContainer}>
                   <TextInputWrapper
                     placeholder="E.G. HDFC0001234"
@@ -1212,7 +1214,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
         {/* ================= STEP 5: REVIEW ================= */}
         {currentStep === 5 && (
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={styles.cardHeaderTitle}>Step 5 of 5 — Review</Text>
 
             {/* Business Information Card */}

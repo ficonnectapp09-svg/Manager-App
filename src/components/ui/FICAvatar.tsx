@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle, ImageStyle } from 'react-native';
-import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface FICAvatarProps {
   name: string;
@@ -15,6 +15,8 @@ export const FICAvatar: React.FC<FICAvatarProps> = ({
   size = 40,
   style,
 }) => {
+  const { colors, isDark } = useTheme();
+
   const getInitials = (str: string) => {
     const parts = str.trim().split(' ');
     if (parts.length >= 2) {
@@ -32,7 +34,7 @@ export const FICAvatar: React.FC<FICAvatarProps> = ({
     return (
       <Image
         source={{ uri: sourceUrl }}
-        style={[styles.avatar, imageStyle]}
+        style={[styles.avatar, { backgroundColor: colors.divider }, imageStyle]}
       />
     );
   }
@@ -41,11 +43,26 @@ export const FICAvatar: React.FC<FICAvatarProps> = ({
     <View
       style={[
         styles.initialsContainer,
-        { width: size, height: size, borderRadius: size / 2 },
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: isDark ? colors.surfaceElevated : colors.primary,
+          borderWidth: isDark ? 1 : 0,
+          borderColor: isDark ? colors.border : 'transparent',
+        },
         style,
       ]}
     >
-      <Text style={[styles.initialsText, { fontSize: size * 0.4 }]}>
+      <Text
+        style={[
+          styles.initialsText,
+          {
+            fontSize: size * 0.4,
+            color: isDark ? colors.goldAccent || '#F2A900' : colors.accent,
+          },
+        ]}
+      >
         {getInitials(name)}
       </Text>
     </View>
@@ -54,15 +71,13 @@ export const FICAvatar: React.FC<FICAvatarProps> = ({
 
 const styles = StyleSheet.create({
   avatar: {
-    backgroundColor: theme.colors.divider,
+    backgroundColor: '#E2E8F0',
   },
   initialsContainer: {
-    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   initialsText: {
-    color: theme.colors.accent,
     fontWeight: '700',
   },
 });

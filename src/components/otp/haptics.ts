@@ -1,31 +1,14 @@
 /**
- * Safe optional wrapper for react-native-haptic-feedback.
- * If installed, triggers subtle tactile feedback. If not installed, safely no-ops.
+ * Safe haptics using React Native built-in Vibration (Zero external dependency crash)
  */
-
-let RNHapticFeedback: any = null;
-
-try {
-  // Optional require
-  const hapticsModule = require('react-native-haptic-feedback');
-  RNHapticFeedback = hapticsModule?.default || hapticsModule;
-} catch {
-  // Not installed; will safely no-op
-}
-
-const hapticOptions = {
-  enableVibrateFallback: true,
-  ignoreAndroidSystemSettings: false,
-};
+import { Vibration } from 'react-native';
 
 export const triggerHaptic = (
-  type: 'impactLight' | 'notificationSuccess' | 'notificationError'
+  _type: 'impactLight' | 'notificationSuccess' | 'notificationError'
 ) => {
-  if (RNHapticFeedback && typeof RNHapticFeedback.trigger === 'function') {
-    try {
-      RNHapticFeedback.trigger(type, hapticOptions);
-    } catch {
-      // Ignore any platform-specific haptic errors
-    }
+  try {
+    Vibration.vibrate(35);
+  } catch {
+    // safe fallback
   }
 };

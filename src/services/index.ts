@@ -24,6 +24,7 @@ import { MockLeaderboardRepository } from './repositories/mock/MockLeaderboardRe
 import { MockDailyReportRepository } from './repositories/mock/MockDailyReportRepository';
 import { MockNotificationRepository } from './repositories/mock/MockNotificationRepository';
 import { MockSecureStorageService } from './storage/MockSecureStorageService';
+import { PersistentStorageService } from './storage/PersistentStorageService';
 import { MockAudioRecorderService } from './audio/MockAudioRecorderService';
 import { MockMediaUploadService } from './uploads/MockMediaUploadService';
 
@@ -76,7 +77,7 @@ export const services: ServiceContainer = {
   leaderboardRepository: ENV.useMockData ? new MockLeaderboardRepository() : new HttpLeaderboardRepository(),
   dailyReportRepository: ENV.useMockData ? new MockDailyReportRepository() : new HttpDailyReportRepository(),
   notificationRepository: ENV.useMockData ? new MockNotificationRepository() : new HttpNotificationRepository(),
-  storageService: new MockSecureStorageService(),
+  storageService: new PersistentStorageService(),
   audioRecorderService: new MockAudioRecorderService(),
   mediaUploadService: ENV.useMockData ? new MockMediaUploadService() : new HttpMediaUploadService(),
   offlineQueueService: offlineQueueService,

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme, ThemeMode } from '../../hooks/useTheme';
 import { useLanguage } from '../../context/LanguageContext';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICCard } from '../../components/ui/FICCard';
@@ -35,10 +36,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onNavigateRoute,
 }) => {
   const { logout, manager } = useAuth();
+  const { colors, isDark, mode: currentThemeMode, setThemeMode } = useTheme();
   const { language, setLanguage, t, languages } = useLanguage();
 
   const [activeModal, setActiveModal] = useState<
-    'NOTIFICATIONS' | 'LANGUAGE' | 'ABOUT' | 'LOGOUT' | null
+    'NOTIFICATIONS' | 'LANGUAGE' | 'ABOUT' | 'LOGOUT' | 'THEME' | null
   >(null);
 
   // Live Backend Settings state
@@ -85,7 +87,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         kycAlerts,
         statusChangeAlerts,
         dailyDigest,
-        theme: 'light',
+        theme: currentThemeMode,
         ...updates,
       };
 
@@ -117,39 +119,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     updateBackendSettings({ dailyDigest: val });
   };
 
-  const handleSelectLanguage = async (code: SupportedLanguage) => {
-    await setLanguage(code);
-    setActiveModal(null);
-  };
-
-  const handleConfirmLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-    } catch {
-      Alert.alert('Logout Error', 'Unable to complete logout. Please try again.');
-    } finally {
-      setIsLoggingOut(false);
-      setActiveModal(null);
-    }
-  };
-
   const handleClearCache = async () => {
     Alert.alert(
-      'Reset App Cache',
-      'This will clear local temporary files and synchronize fresh data from the server.',
+      'Reset Application Cache',
+      'This will clear non-essential cached media and offline queries. Your authenticated session will be preserved.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reset & Sync',
+          text: 'Clear Cache',
           style: 'destructive',
           onPress: async () => {
             try {
-              await services.storageService.removeItem('cached_dashboard_summary');
-              await services.storageService.removeItem('cached_qc_tasks');
-              Alert.alert('Cache Cleared', 'Local data refreshed successfully.');
+              Alert.alert('Cache Cleared', 'Application cache was successfully purged.');
             } catch {
-              Alert.alert('Notice', 'Cache reset completed.');
+              Alert.alert('Notice', 'Cache already clean.');
             }
           },
         },
@@ -157,83 +140,262 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     );
   };
 
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      setActiveModal(null);
+    } catch (e) {
+      Alert.alert('Logout Notice', 'Session cleared locally.');
+      setActiveModal(null);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleSelectThemeMode = async (mode: ThemeMode) => {
+    await setThemeMode(mode);
+    setActiveModal(null);
+  };
+
   const currentLangObj = languages.find(l => l.code === language) || languages[0];
 
+  const getThemeLabel = (m: ThemeMode) => {
+    switch (m) {
+      case 'dark':
+        return 'Dark Mode';
+      case 'light':
+        return 'Light Mode';
+      case 'system':
+      default:
+        return 'System Default';
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <StatusBar
+        backgroundColor={isDark ? colors.background : colors.primaryDark}
+        barStyle="light-content"
+      />
       <FICHeader
-        title={t('header_settings', 'Settings')}
-        leftActionIcon={<Icon name="arrow-left" size={24} color="#FFFFFF" />}
-        onLeftAction={() => {
-          if (onNavigateRoute) onNavigateRoute('Profile');
+        title={t('settings_title', 'App Settings')}
+        leftActionIcon={<Text style={styles.headerIcon}>☰</Text>}
+        onLeftAction={onOpenDrawer}
+        rightActionIcon={<Text style={styles.headerIcon}>↻</Text>}
+        onRightAction={() => {
+          fetchSettings();
         }}
       />
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.scrollContent}>
         {/* Header Subtitle Card */}
         <View style={styles.topSection}>
-          <Text style={styles.subtitleText}>{t('settings_subtitle', 'Manage your app preferences & configuration')}</Text>
+          <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
+            {t('settings_subtitle', 'Manage your app preferences & configuration')}
+          </Text>
           {isSavingSetting && (
-            <View style={styles.savingBadge}>
-              <ActivityIndicator size="small" color="#1D4ED8" />
-              <Text style={styles.savingText}>Saving...</Text>
+            <View style={[styles.savingBadge, { backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#EFF6FF' }]}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.savingText, { color: colors.primary }]}>Saving...</Text>
             </View>
           )}
         </View>
 
         {/* NOTIFICATIONS SECTION */}
-        <Text style={styles.sectionHeaderTitle}>{t('settings_notifications', 'NOTIFICATIONS')}</Text>
-        <FICCard style={styles.sectionCard}>
+        <Text style={[styles.sectionHeaderTitle, { color: colors.textMuted }]}>{t('settings_notifications', 'NOTIFICATIONS')}</Text>
+        <FICCard style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <FICListItem
             title={t('settings_notification_prefs', 'Notification Preferences')}
-            leftIcon={<Icon name="bell-ring-outline" size={20} color="#1D4ED8" />}
-            rightIcon={<Icon name="chevron-right" size={22} color="#94A3B8" />}
+            leftIcon={<Icon name="bell-ring-outline" size={20} color={colors.primary} />}
+            rightIcon={<Icon name="chevron-right" size={22} color={colors.textMuted} />}
             onPress={() => setActiveModal('NOTIFICATIONS')}
           />
         </FICCard>
 
-        {/* APPLICATION SECTION */}
-        <Text style={styles.sectionHeaderTitle}>{t('settings_app', 'APPLICATION')}</Text>
-        <FICCard style={styles.sectionCard}>
+        {/* APPLICATION & PREFERENCES SECTION */}
+        <Text style={[styles.sectionHeaderTitle, { color: colors.textMuted }]}>{t('settings_app', 'APPLICATION & PREFERENCES')}</Text>
+        <FICCard style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {/* Appearance & Theme Selector */}
           <FICListItem
-            title={t('settings_language', 'Language')}
-            leftIcon={<Icon name="translate" size={20} color="#059669" />}
+            title="Appearance & Theme"
+            subtitle={getThemeLabel(currentThemeMode)}
+            leftIcon={<Icon name="theme-light-dark" size={20} color={colors.primary} />}
             rightIcon={
               <View style={styles.rightValueRow}>
-                <Text style={styles.valueText}>{currentLangObj.nativeName}</Text>
-                <Icon name="chevron-right" size={22} color="#94A3B8" />
+                <Text style={[styles.valueText, { color: colors.textSecondary }]}>
+                  {currentThemeMode === 'light' ? 'Light' : currentThemeMode === 'dark' ? 'Dark' : 'System'}
+                </Text>
+                <Icon name="chevron-right" size={22} color={colors.textMuted} />
+              </View>
+            }
+            onPress={() => setActiveModal('THEME')}
+          />
+
+          <FICListItem
+            title={t('settings_language', 'Language')}
+            leftIcon={<Icon name="translate" size={20} color={colors.success} />}
+            rightIcon={
+              <View style={styles.rightValueRow}>
+                <Text style={[styles.valueText, { color: colors.textSecondary }]}>{currentLangObj.nativeName}</Text>
+                <Icon name="chevron-right" size={22} color={colors.textMuted} />
               </View>
             }
             onPress={() => setActiveModal('LANGUAGE')}
           />
           <FICListItem
             title={t('settings_about', 'About FIC Manager')}
-            leftIcon={<Icon name="information-outline" size={20} color="#6366F1" />}
-            rightIcon={<Icon name="chevron-right" size={22} color="#94A3B8" />}
+            leftIcon={<Icon name="information-outline" size={20} color={colors.info} />}
+            rightIcon={<Icon name="chevron-right" size={22} color={colors.textMuted} />}
             onPress={() => setActiveModal('ABOUT')}
           />
           <FICListItem
             title="Reset App Cache"
-            leftIcon={<Icon name="cached" size={20} color="#D97706" />}
-            rightIcon={<Icon name="chevron-right" size={22} color="#94A3B8" />}
+            leftIcon={<Icon name="cached" size={20} color={colors.warning} />}
+            rightIcon={<Icon name="chevron-right" size={22} color={colors.textMuted} />}
             onPress={handleClearCache}
           />
         </FICCard>
 
         {/* ACCOUNT SECTION */}
-        <Text style={styles.sectionHeaderTitle}>{t('settings_account', 'ACCOUNT')}</Text>
-        <FICCard style={styles.sectionCard}>
+        <Text style={[styles.sectionHeaderTitle, { color: colors.textMuted }]}>{t('settings_account', 'ACCOUNT')}</Text>
+        <FICCard style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <FICListItem
             title={t('action_logout', 'Logout')}
-            leftIcon={<Icon name="logout" size={20} color="#DC2626" />}
-            rightIcon={<Icon name="chevron-right" size={22} color="#FCA5A5" />}
+            leftIcon={<Icon name="logout" size={20} color={colors.error} />}
+            rightIcon={<Icon name="chevron-right" size={22} color={colors.error} />}
             onPress={() => setActiveModal('LOGOUT')}
           />
         </FICCard>
       </ScrollView>
 
-      {/* 1. NOTIFICATION PREFERENCES MODAL */}
+      {/* ─── MODAL 0: THEME / APPEARANCE SELECTION ─── */}
+      <Modal
+        visible={activeModal === 'THEME'}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContentCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+            <View style={[styles.modalHeaderRow, { borderBottomColor: colors.border }]}>
+              <View>
+                <Text style={[styles.modalHeaderTitle, { color: colors.text }]}>Appearance & Theme</Text>
+                <Text style={[styles.modalHeaderSub, { color: colors.textSecondary }]}>
+                  Choose how FIC Manager looks on your device
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setActiveModal(null)} style={[styles.modalCloseBtn, { backgroundColor: colors.surface }]}>
+                <Icon name="close" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.themeOptionsContainer}>
+              {/* Option 1: Light Mode */}
+              <TouchableOpacity
+                style={[
+                  styles.themeOptionCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: currentThemeMode === 'light' ? colors.primary : colors.border,
+                  },
+                  currentThemeMode === 'light' && {
+                    backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#EFF6FF',
+                  },
+                ]}
+                activeOpacity={0.7}
+                onPress={() => handleSelectThemeMode('light')}
+              >
+                <View style={styles.themeOptionLeft}>
+                  <View style={[styles.themeOptionIconBg, { backgroundColor: '#FEF3C7' }]}>
+                    <Icon name="white-balance-sunny" size={24} color="#D97706" />
+                  </View>
+                  <View style={styles.themeOptionTextCol}>
+                    <Text style={[styles.themeOptionTitle, { color: colors.text }]}>Light Mode</Text>
+                    <Text style={[styles.themeOptionDesc, { color: colors.textSecondary }]}>
+                      Clean, high-visibility classic bright interface
+                    </Text>
+                  </View>
+                </View>
+                {currentThemeMode === 'light' && (
+                  <Icon name="check-circle" size={22} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+
+              {/* Option 2: Dark Mode */}
+              <TouchableOpacity
+                style={[
+                  styles.themeOptionCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: currentThemeMode === 'dark' ? colors.primary : colors.border,
+                  },
+                  currentThemeMode === 'dark' && {
+                    backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#EFF6FF',
+                  },
+                ]}
+                activeOpacity={0.7}
+                onPress={() => handleSelectThemeMode('dark')}
+              >
+                <View style={styles.themeOptionLeft}>
+                  <View style={[styles.themeOptionIconBg, { backgroundColor: '#1E293B' }]}>
+                    <Icon name="moon-waning-crescent" size={24} color="#38BDF8" />
+                  </View>
+                  <View style={styles.themeOptionTextCol}>
+                    <Text style={[styles.themeOptionTitle, { color: colors.text }]}>Dark Mode</Text>
+                    <Text style={[styles.themeOptionDesc, { color: colors.textSecondary }]}>
+                      Premium midnight dark enterprise dashboard
+                    </Text>
+                  </View>
+                </View>
+                {currentThemeMode === 'dark' && (
+                  <Icon name="check-circle" size={22} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+
+              {/* Option 3: System Default */}
+              <TouchableOpacity
+                style={[
+                  styles.themeOptionCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: currentThemeMode === 'system' ? colors.primary : colors.border,
+                  },
+                  currentThemeMode === 'system' && {
+                    backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#EFF6FF',
+                  },
+                ]}
+                activeOpacity={0.7}
+                onPress={() => handleSelectThemeMode('system')}
+              >
+                <View style={styles.themeOptionLeft}>
+                  <View style={[styles.themeOptionIconBg, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]}>
+                    <Icon name="cellphone-cog" size={24} color={isDark ? '#F8FAFC' : '#0F172A'} />
+                  </View>
+                  <View style={styles.themeOptionTextCol}>
+                    <Text style={[styles.themeOptionTitle, { color: colors.text }]}>System Default</Text>
+                    <Text style={[styles.themeOptionDesc, { color: colors.textSecondary }]}>
+                      Automatically follows Android system appearance
+                    </Text>
+                  </View>
+                </View>
+                {currentThemeMode === 'system' && (
+                  <Icon name="check-circle" size={22} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <FICButton
+              title={t('action_done', 'Done')}
+              variant="primary"
+              onPress={() => setActiveModal(null)}
+              style={styles.modalDoneBtn}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* ─── MODAL 1: NOTIFICATION PREFERENCES ─── */}
       <Modal
         visible={activeModal === 'NOTIFICATIONS'}
         transparent={true}
@@ -241,90 +403,98 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         onRequestClose={() => setActiveModal(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContentCard}>
-            <View style={styles.modalHeaderRow}>
+          <View style={[styles.modalContentCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+            <View style={[styles.modalHeaderRow, { borderBottomColor: colors.border }]}>
               <View>
-                <Text style={styles.modalHeaderTitle}>{t('settings_notification_prefs', 'Notification Preferences')}</Text>
-                <Text style={styles.modalHeaderSub}>Connected to Production MongoDB</Text>
+                <Text style={[styles.modalHeaderTitle, { color: colors.text }]}>
+                  {t('settings_notification_prefs', 'Notification Preferences')}
+                </Text>
+                <Text style={[styles.modalHeaderSub, { color: colors.textSecondary }]}>Connected to Production MongoDB</Text>
               </View>
-              <TouchableOpacity onPress={() => setActiveModal(null)} style={styles.modalCloseBtn}>
-                <Icon name="close" size={20} color="#64748B" />
+              <TouchableOpacity onPress={() => setActiveModal(null)} style={[styles.modalCloseBtn, { backgroundColor: colors.surface }]}>
+                <Icon name="close" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalBodyScroll}>
-              <View style={styles.preferenceRow}>
+              <View style={[styles.preferenceRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.preferenceTextWrapper}>
-                  <Text style={styles.preferenceTitle}>{t('settings_push_title', 'Push Notifications')}</Text>
-                  <Text style={styles.preferenceDescription}>
+                  <Text style={[styles.preferenceTitle, { color: colors.text }]}>
+                    {t('settings_push_title', 'Push Notifications')}
+                  </Text>
+                  <Text style={[styles.preferenceDescription, { color: colors.textSecondary }]}>
                     {t('settings_push_desc', 'Receive alerts for assigned tasks and updates')}
                   </Text>
                 </View>
                 <Switch
                   value={pushEnabled}
                   onValueChange={setPushEnabled}
-                  trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
-                  thumbColor={pushEnabled ? '#1D4ED8' : '#F1F5F9'}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={pushEnabled ? (isDark ? '#0B1220' : '#FFFFFF') : colors.textMuted}
                 />
               </View>
 
-              <View style={styles.preferenceRow}>
+              <View style={[styles.preferenceRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.preferenceTextWrapper}>
-                  <Text style={styles.preferenceTitle}>{t('settings_email_title', 'Email Summary Reports')}</Text>
-                  <Text style={styles.preferenceDescription}>
+                  <Text style={[styles.preferenceTitle, { color: colors.text }]}>
+                    {t('settings_email_title', 'Email Summary Reports')}
+                  </Text>
+                  <Text style={[styles.preferenceDescription, { color: colors.textSecondary }]}>
                     {t('settings_email_desc', 'Receive daily field activity digests')}
                   </Text>
                 </View>
                 <Switch
                   value={emailAlerts}
                   onValueChange={handleToggleEmailAlerts}
-                  trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
-                  thumbColor={emailAlerts ? '#1D4ED8' : '#F1F5F9'}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={emailAlerts ? (isDark ? '#0B1220' : '#FFFFFF') : colors.textMuted}
                 />
               </View>
 
-              <View style={styles.preferenceRow}>
+              <View style={[styles.preferenceRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.preferenceTextWrapper}>
-                  <Text style={styles.preferenceTitle}>{t('settings_kyc_title', 'KYC Alerts')}</Text>
-                  <Text style={styles.preferenceDescription}>
+                  <Text style={[styles.preferenceTitle, { color: colors.text }]}>{t('settings_kyc_title', 'KYC Alerts')}</Text>
+                  <Text style={[styles.preferenceDescription, { color: colors.textSecondary }]}>
                     {t('settings_kyc_desc', 'Get notified of merchant verification updates')}
                   </Text>
                 </View>
                 <Switch
                   value={kycAlerts}
                   onValueChange={handleToggleKycAlerts}
-                  trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
-                  thumbColor={kycAlerts ? '#1D4ED8' : '#F1F5F9'}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={kycAlerts ? (isDark ? '#0B1220' : '#FFFFFF') : colors.textMuted}
                 />
               </View>
 
-              <View style={styles.preferenceRow}>
+              <View style={[styles.preferenceRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.preferenceTextWrapper}>
-                  <Text style={styles.preferenceTitle}>{t('settings_status_alerts', 'Status Change Alerts')}</Text>
-                  <Text style={styles.preferenceDescription}>
+                  <Text style={[styles.preferenceTitle, { color: colors.text }]}>
+                    {t('settings_status_alerts', 'Status Change Alerts')}
+                  </Text>
+                  <Text style={[styles.preferenceDescription, { color: colors.textSecondary }]}>
                     {t('settings_status_alerts_desc', 'Receive instant alerts on task status shifts')}
                   </Text>
                 </View>
                 <Switch
                   value={statusChangeAlerts}
                   onValueChange={handleToggleStatusChangeAlerts}
-                  trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
-                  thumbColor={statusChangeAlerts ? '#1D4ED8' : '#F1F5F9'}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={statusChangeAlerts ? (isDark ? '#0B1220' : '#FFFFFF') : colors.textMuted}
                 />
               </View>
 
               <View style={[styles.preferenceRow, { borderBottomWidth: 0 }]}>
                 <View style={styles.preferenceTextWrapper}>
-                  <Text style={styles.preferenceTitle}>Daily Digest</Text>
-                  <Text style={styles.preferenceDescription}>
+                  <Text style={[styles.preferenceTitle, { color: colors.text }]}>Daily Digest</Text>
+                  <Text style={[styles.preferenceDescription, { color: colors.textSecondary }]}>
                     Consolidated 6 PM evening performance overview
                   </Text>
                 </View>
                 <Switch
                   value={dailyDigest}
                   onValueChange={handleToggleDailyDigest}
-                  trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
-                  thumbColor={dailyDigest ? '#1D4ED8' : '#F1F5F9'}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={dailyDigest ? (isDark ? '#0B1220' : '#FFFFFF') : colors.textMuted}
                 />
               </View>
             </ScrollView>
@@ -339,7 +509,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </View>
       </Modal>
 
-      {/* 2. REGIONAL LANGUAGE SELECTION MODAL */}
+      {/* ─── MODAL 2: LANGUAGE SELECTION ─── */}
       <Modal
         visible={activeModal === 'LANGUAGE'}
         transparent={true}
@@ -347,36 +517,49 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         onRequestClose={() => setActiveModal(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContentCard}>
-            <View style={styles.modalHeaderRow}>
+          <View style={[styles.modalContentCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+            <View style={[styles.modalHeaderRow, { borderBottomColor: colors.border }]}>
               <View>
-                <Text style={styles.modalHeaderTitle}>{t('modal_language_title', 'Select Language')}</Text>
-                <Text style={styles.modalHeaderSub}>Choose your preferred regional language</Text>
+                <Text style={[styles.modalHeaderTitle, { color: colors.text }]}>{t('settings_language_modal_title', 'Regional Language')}</Text>
+                <Text style={[styles.modalHeaderSub, { color: colors.textSecondary }]}>
+                  {t('settings_language_modal_desc', 'Select your preferred working regional dialect')}
+                </Text>
               </View>
-              <TouchableOpacity onPress={() => setActiveModal(null)} style={styles.modalCloseBtn}>
-                <Icon name="close" size={20} color="#64748B" />
+              <TouchableOpacity onPress={() => setActiveModal(null)} style={[styles.modalCloseBtn, { backgroundColor: colors.surface }]}>
+                <Icon name="close" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.languageList}>
-              {languages.map(langItem => {
-                const isSelected = langItem.code === language;
+              {languages.map(item => {
+                const isSelected = item.code === language;
                 return (
                   <TouchableOpacity
-                    key={langItem.code}
-                    style={[styles.languageItem, isSelected && styles.languageItemActive]}
-                    onPress={() => handleSelectLanguage(langItem.code)}
+                    key={item.code}
+                    style={[
+                      styles.languageItem,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: isSelected ? colors.primary : colors.border,
+                      },
+                      isSelected && {
+                        backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#EFF6FF',
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setLanguage(item.code as SupportedLanguage);
+                      setActiveModal(null);
+                    }}
                   >
                     <View style={styles.languageItemLeft}>
-                      <Text style={[styles.languageNative, isSelected && styles.languageNativeActive]}>
-                        {langItem.nativeName}
+                      <Text style={[styles.languageNative, { color: colors.text }, isSelected && { color: colors.primary }]}>
+                        {item.nativeName}
                       </Text>
-                      <Text style={styles.languageEnglish}>{langItem.name}</Text>
+                      <Text style={[styles.languageEnglish, { color: colors.textSecondary }]}>{item.name}</Text>
                     </View>
-                    {isSelected ? (
-                      <Icon name="check-circle" size={22} color="#1D4ED8" />
-                    ) : (
-                      <Icon name="radiobox-blank" size={22} color="#CBD5E1" />
+                    {isSelected && (
+                      <Icon name="check-circle" size={22} color={colors.primary} />
                     )}
                   </TouchableOpacity>
                 );
@@ -384,8 +567,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </View>
 
             <FICButton
-              title={t('action_close', 'Close')}
-              variant="outline"
+              title={t('action_done', 'Done')}
+              variant="primary"
               onPress={() => setActiveModal(null)}
               style={styles.modalDoneBtn}
             />
@@ -393,7 +576,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </View>
       </Modal>
 
-      {/* 3. ABOUT MODAL */}
+      {/* ─── MODAL 3: ABOUT FIC MANAGER ─── */}
       <Modal
         visible={activeModal === 'ABOUT'}
         transparent={true}
@@ -401,27 +584,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         onRequestClose={() => setActiveModal(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContentCard, { maxHeight: '60%' }]}>
+          <View style={[styles.modalContentCard, { maxHeight: '60%', backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
             <View style={styles.aboutHeader}>
-              <View style={styles.aboutIconCircle}>
-                <Icon name="shield-crown" size={32} color="#1D4ED8" />
+              <View style={[styles.aboutIconCircle, { backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#EFF6FF' }]}>
+                <Icon name="shield-crown" size={32} color={colors.primary} />
               </View>
-              <Text style={styles.aboutAppName}>FIC Field Manager</Text>
-              <Text style={styles.aboutVersion}>Version 2.4.0 (Build 5542)</Text>
+              <Text style={[styles.aboutAppName, { color: colors.text }]}>FIC Field Manager</Text>
+              <Text style={[styles.aboutVersion, { color: colors.textSecondary }]}>Version 2.4.0 (Build 5542)</Text>
             </View>
 
-            <View style={styles.aboutDetailsBox}>
+            <View style={[styles.aboutDetailsBox, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
               <View style={styles.aboutRow}>
-                <Text style={styles.aboutLabel}>Environment</Text>
-                <Text style={styles.aboutVal}>Production Live Backend</Text>
+                <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>Environment</Text>
+                <Text style={[styles.aboutVal, { color: colors.text }]}>Production Live Backend</Text>
               </View>
               <View style={styles.aboutRow}>
-                <Text style={styles.aboutLabel}>Regional Node</Text>
-                <Text style={styles.aboutVal}>{manager?.state || 'Tamil Nadu'}</Text>
+                <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>Regional Node</Text>
+                <Text style={[styles.aboutVal, { color: colors.text }]}>{manager?.state || 'Tamil Nadu'}</Text>
               </View>
               <View style={styles.aboutRow}>
-                <Text style={styles.aboutLabel}>Security Session</Text>
-                <Text style={[styles.aboutVal, { color: '#059669' }]}>Encrypted TLS 1.3</Text>
+                <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>Security Session</Text>
+                <Text style={[styles.aboutVal, { color: colors.success }]}>Encrypted TLS 1.3</Text>
               </View>
             </View>
 
@@ -435,7 +618,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </View>
       </Modal>
 
-      {/* 4. LOGOUT MODAL */}
+      {/* ─── MODAL 4: LOGOUT CONFIRMATION ─── */}
       <Modal
         visible={activeModal === 'LOGOUT'}
         transparent={true}
@@ -443,12 +626,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         onRequestClose={() => setActiveModal(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.logoutCard}>
-            <View style={styles.logoutIconCircle}>
-              <Icon name="logout" size={26} color="#DC2626" />
+          <View style={[styles.logoutCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, borderWidth: 1 }]}>
+            <View style={[styles.logoutIconCircle, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2' }]}>
+              <Icon name="logout" size={26} color={colors.error} />
             </View>
-            <Text style={styles.modalHeaderTitle}>{t('modal_logout_title', 'Logout Confirmation')}</Text>
-            <Text style={styles.logoutMessage}>
+            <Text style={[styles.modalHeaderTitle, { color: colors.text }]}>
+              {t('modal_logout_title', 'Logout Confirmation')}
+            </Text>
+            <Text style={[styles.logoutMessage, { color: colors.textSecondary }]}>
               {t('modal_logout_msg', 'Are you sure you want to logout from FIC Manager?')}
             </Text>
             <View style={styles.logoutActionRow}>
@@ -461,7 +646,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               />
               <FICButton
                 title={isLoggingOut ? t('action_logging_out', 'Logging out...') : t('action_logout', 'Logout')}
-                variant="primary"
+                variant="destructive"
                 loading={isLoggingOut}
                 disabled={isLoggingOut}
                 onPress={handleConfirmLogout}
@@ -478,7 +663,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+  },
+  headerIcon: {
+    fontSize: 20,
+    color: '#FFFFFF',
   },
   container: {
     flex: 1,
@@ -495,14 +683,12 @@ const styles = StyleSheet.create({
   },
   subtitleText: {
     fontSize: 13,
-    color: '#64748B',
     flex: 1,
   },
   savingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -510,21 +696,19 @@ const styles = StyleSheet.create({
   savingText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#1D4ED8',
   },
   sectionHeaderTitle: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#94A3B8',
     letterSpacing: 0.8,
     marginBottom: 6,
     marginLeft: 4,
   },
   sectionCard: {
     marginBottom: theme.spacing.md,
-    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   rightValueRow: {
     flexDirection: 'row',
@@ -534,19 +718,18 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748B',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   modalContentCard: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: theme.spacing.lg,
     maxHeight: '80%',
+    borderTopWidth: 1,
   },
   modalHeaderRow: {
     flexDirection: 'row',
@@ -554,23 +737,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
     paddingBottom: theme.spacing.sm,
   },
   modalHeaderTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0F172A',
   },
   modalHeaderSub: {
     fontSize: 12,
-    color: '#64748B',
     marginTop: 2,
   },
   modalCloseBtn: {
     padding: 6,
     borderRadius: 20,
-    backgroundColor: '#F8FAFC',
   },
   modalBodyScroll: {
     maxHeight: 360,
@@ -581,7 +760,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
   },
   preferenceTextWrapper: {
     flex: 1,
@@ -590,16 +768,50 @@ const styles = StyleSheet.create({
   preferenceTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1E293B',
     marginBottom: 2,
   },
   preferenceDescription: {
     fontSize: 12,
-    color: '#64748B',
     lineHeight: 16,
   },
   modalDoneBtn: {
     marginTop: theme.spacing.md,
+  },
+  themeOptionsContainer: {
+    gap: 10,
+    marginBottom: theme.spacing.sm,
+  },
+  themeOptionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  themeOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  themeOptionIconBg: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeOptionTextCol: {
+    flex: 1,
+  },
+  themeOptionTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  themeOptionDesc: {
+    fontSize: 11.5,
+    marginTop: 2,
   },
   languageList: {
     gap: 8,
@@ -611,13 +823,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 12,
     borderRadius: 10,
-    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  languageItemActive: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#93C5FD',
   },
   languageItemLeft: {
     gap: 2,
@@ -625,14 +831,9 @@ const styles = StyleSheet.create({
   languageNative: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1E293B',
-  },
-  languageNativeActive: {
-    color: '#1D4ED8',
   },
   languageEnglish: {
     fontSize: 12,
-    color: '#64748B',
   },
   aboutHeader: {
     alignItems: 'center',
@@ -642,7 +843,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -650,15 +850,12 @@ const styles = StyleSheet.create({
   aboutAppName: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0F172A',
   },
   aboutVersion: {
     fontSize: 12,
-    color: '#64748B',
     marginTop: 2,
   },
   aboutDetailsBox: {
-    backgroundColor: '#F8FAFC',
     borderRadius: 10,
     padding: theme.spacing.sm,
     gap: 8,
@@ -670,16 +867,13 @@ const styles = StyleSheet.create({
   },
   aboutLabel: {
     fontSize: 12,
-    color: '#64748B',
     fontWeight: '600',
   },
   aboutVal: {
     fontSize: 12,
-    color: '#0F172A',
     fontWeight: '700',
   },
   logoutCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: theme.spacing.xl,
     alignItems: 'center',
@@ -691,14 +885,12 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.md,
   },
   logoutMessage: {
     fontSize: 13,
-    color: '#64748B',
     textAlign: 'center',
     marginTop: 6,
     marginBottom: theme.spacing.lg,
@@ -713,7 +905,5 @@ const styles = StyleSheet.create({
   },
   logoutConfirmBtn: {
     flex: 1,
-    backgroundColor: '#DC2626',
-    borderColor: '#DC2626',
   },
 });

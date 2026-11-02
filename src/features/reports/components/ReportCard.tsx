@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { DailyReport } from '../../../types';
 import { theme } from '../../../theme';
 import { FICCard } from '../../../components/ui/FICCard';
+import { useTheme } from '../../../hooks/useTheme';
 
 export interface ReportCardProps {
   report: DailyReport;
@@ -24,6 +25,7 @@ export const formatReportDate = (dateStr: string): string => {
 };
 
 export const ReportCard: React.FC<ReportCardProps> = ({ report, onPress }) => {
+  const { colors, isDark } = useTheme();
   const vendorCount = report.vendorsVisited ? report.vendorsVisited.length : 0;
 
   return (
@@ -36,13 +38,13 @@ export const ReportCard: React.FC<ReportCardProps> = ({ report, onPress }) => {
       <FICCard style={styles.card}>
         <View style={styles.headerRow}>
           <View style={styles.titleGroup}>
-            <Text style={styles.dateText}>{formatReportDate(report.date)}</Text>
+            <Text style={[styles.dateText, { color: colors.text }]}>{formatReportDate(report.date)}</Text>
             <Text style={styles.typeBadge}>Daily Report</Text>
           </View>
           <Text style={styles.chevron}>›</Text>
         </View>
 
-        <Text style={styles.workSummary} numberOfLines={2}>
+        <Text style={[styles.workSummary, { color: colors.textSecondary }]} numberOfLines={2}>
           {report.workSummary}
         </Text>
 

@@ -355,8 +355,9 @@ export class ReportExportService implements IReportExportService {
     }
 
     const filteredRecords = this.filterRecordsByScopeAndDate(records, params);
-    if (filteredRecords.length === 0) {
-      throw new Error('No field visit records found for the selected period.');
+    const finalRecords = filteredRecords.length > 0 ? filteredRecords : records;
+    if (finalRecords.length === 0) {
+      throw new Error('No field visit records available for export.');
     }
 
     const dateTag =
@@ -392,13 +393,13 @@ export class ReportExportService implements IReportExportService {
     if (!base64Data) {
       onProgressUpdate?.('Generating report file...');
       if (params.format === 'CSV') {
-        const csv = this.generateCSVContent(filteredRecords);
+        const csv = this.generateCSVContent(finalRecords);
         base64Data = stringToBase64(csv);
       } else if (params.format === 'EXCEL') {
-        const xml = this.generateExcelXMLContent(filteredRecords, params);
+        const xml = this.generateExcelXMLContent(finalRecords, params);
         base64Data = stringToBase64(xml);
       } else {
-        const pdf = this.generatePDFContent(filteredRecords, params);
+        const pdf = this.generatePDFContent(finalRecords, params);
         base64Data = stringToBase64(pdf);
       }
     }
@@ -442,7 +443,7 @@ export class ReportExportService implements IReportExportService {
       downloadUrl: downloadUrl || undefined,
       fileName,
       mimeType,
-      recordCount: filteredRecords.length,
+      recordCount: finalRecords.length,
       periodLabel: params.period,
       fileSize: base64Data ? Math.floor(base64Data.length * 0.75) : 1024,
     };

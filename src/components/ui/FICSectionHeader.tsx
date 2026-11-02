@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface FICSectionHeaderProps {
   title: string;
@@ -15,11 +16,13 @@ export const FICSectionHeader: React.FC<FICSectionHeaderProps> = ({
   rightAction,
   style,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <View style={[styles.container, style]}>
       <View style={styles.textWrapper}>
-        <Text style={styles.title}>{title}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        {subtitle && <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
       </View>
       {rightAction}
     </View>
@@ -40,11 +43,9 @@ const styles = StyleSheet.create({
   title: {
     ...theme.typography.title,
     fontSize: 16,
-    color: theme.colors.text,
   },
   subtitle: {
     ...theme.typography.caption,
-    color: theme.colors.textSecondary,
     marginTop: 2,
   },
 });

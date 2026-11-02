@@ -8,6 +8,26 @@ import { apiClient } from '../../api/ApiClient';
 import { services } from '../../index';
 
 export class HttpVendorRepository implements IVendorRepository {
+  private isVendorApprovedAndActive(v: any): boolean {
+    if (!v) return false;
+    const status = String(v.status || '').toLowerCase().trim();
+    const approval = String(v.approvalStatus || '').toLowerCase().trim();
+    const opStatus = String(v.operationalStatus || '').toLowerCase().trim();
+
+    // Exclude pending, under review, rejected, and incomplete drafts (Module 3)
+    if (status.includes('pending') || approval.includes('pending')) return false;
+    if (status.includes('review') || approval.includes('review')) return false;
+    if (status.includes('reject') || approval.includes('reject')) return false;
+    if (status === 'suspended' || approval === 'suspended' || v.isSuspended === true) return false;
+    if (v.isDraft === true || v.isOnboardingCompleted === false) return false;
+
+    // Must be approved or active
+    const isApproved = status === 'approved' || approval.includes('approved') || v.isApproved === true;
+    const isActive = status === 'active' || opStatus === 'active' || v.isActive === true;
+
+    return isApproved || isActive;
+  }
+
   private async getToken(): Promise<string | null> {
     return services.storageService.getAuthToken();
   }
@@ -80,7 +100,9 @@ export class HttpVendorRepository implements IVendorRepository {
     const list = Array.isArray(response.data)
       ? response.data
       : (Array.isArray((response as any).vendors) ? (response as any).vendors : []);
-    return list.map((v: any) => this.normalizeVendor(v));
+    // Strict requirement (Module 3): Show approved and active vendors only
+    const approvedOnly = list.filter((v: any) => this.isVendorApprovedAndActive(v));
+    return approvedOnly.map((v: any) => this.normalizeVendor(v));
   }
 
   async getVendorById(id: string): Promise<Vendor | null> {

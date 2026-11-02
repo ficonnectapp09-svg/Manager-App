@@ -19,8 +19,10 @@ import { FICButton } from '../../../components/ui/FICButton';
 import { FICImageUploadModal } from '../../../components/ui/FICImageUploadModal';
 import { FICAvatar } from '../../../components/ui/FICAvatar';
 import { apiClient } from '../../../services/api/ApiClient';
+import { ENV } from '../../../constants/env';
 import { services } from '../../../services';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useTheme } from '../../../hooks/useTheme';
 
 export interface EditProfileModalProps {
   visible: boolean;
@@ -39,6 +41,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onSuccess,
   onUpdateManager,
 }) => {
+  const { colors, isDark } = useTheme();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'DETAILS' | 'BANK' | 'PHOTO'>(initialTab);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -196,30 +199,47 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       const formData = new FormData();
       formData.append('avatar', {
         uri,
-        name: 'profile_avatar.jpg',
+        name: `profile_${Date.now()}.jpg`,
         type: 'image/jpeg',
       } as any);
 
-      const res = await apiClient.put<any>('/auth/profile-photo', formData, {
-        token,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Upload via multipart endpoint (Module 11)
+      const res = await apiClient.uploadMultipart<any>('/auth/profile-photo', formData, token || undefined);
 
-      const newAvatarUrl = res?.avatarUrl || uri;
+      let newAvatarUrl = res?.data?.avatarUrl || (res as any)?.avatarUrl || uri;
+      if (typeof newAvatarUrl === 'string' && newAvatarUrl.startsWith('/')) {
+        const origin = ENV.apiBaseUrl.replace(/\/api\/?$/, '');
+        newAvatarUrl = `${origin}${newAvatarUrl}`;
+      }
+
+      setAvatarUri(newAvatarUrl);
       onUpdateManager({
         avatarUrl: newAvatarUrl,
         profileImage: newAvatarUrl,
       });
 
-      Alert.alert('Photo Updated', 'Profile photo updated successfully!');
+      // Persist in persistent storage
+      const storedMgrObj = await services.storageService.getItem('ACTIVE_MGR_OBJECT');
+      if (storedMgrObj) {
+        try {
+          const parsed = JSON.parse(storedMgrObj);
+          parsed.avatarUrl = newAvatarUrl;
+          parsed.profileImage = newAvatarUrl;
+          await services.storageService.setItem('ACTIVE_MGR_OBJECT', JSON.stringify(parsed));
+        } catch {}
+      }
+
+      Alert.alert('Photo Updated', 'Profile photo updated and synchronized successfully!');
       onSuccess();
     } catch (err: any) {
-      // Local fallback if multi-part route has rate limiter
+      console.warn('Profile photo upload error:', err);
+      // Fallback
       onUpdateManager({
         avatarUrl: uri,
         profileImage: uri,
       });
-      Alert.alert('Success', 'Profile photo set successfully!');
+      Alert.alert('Photo Updated', 'Profile photo set on device.');
+      onSuccess();
     } finally {
       setIsSaving(false);
     }
@@ -287,7 +307,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 size={18}
                 color={activeTab === 'DETAILS' ? theme.colors.primary : '#64748B'}
               />
-              <Text style={[styles.tabText, activeTab === 'DETAILS' && styles.tabTextActive]}>
+              <Text style={[styles.tabText, { color: colors.textMuted }, activeTab === 'DETAILS' && styles.tabTextActive]}>
                 Personal
               </Text>
             </TouchableOpacity>

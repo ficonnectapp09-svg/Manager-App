@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { Vendor, VendorStatus } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
@@ -48,6 +49,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('Overview');
@@ -230,7 +232,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
   const tabs: TabType[] = ['Overview', 'Activity', 'Issues', 'Outlets'];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Vendor Details"
@@ -244,7 +246,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* HERO HEADER CARD */}
-        <View style={styles.heroCard}>
+        <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.heroTopRow}>
             {/* Storefront Image or Neutral Initials Avatar */}
             {validPhotoUri ? (
@@ -264,11 +266,11 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
 
             {/* Middle Details */}
             <View style={styles.heroCenterCol}>
-              <Text style={styles.businessName} numberOfLines={1}>
+              <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
                 {vendor.businessName}
               </Text>
 
-              <Text style={styles.heroSubtitle}>
+              <Text style={[styles.heroSubtitle, { color: colors.textMuted }]}>
                 {vendor.businessType || 'Retail'} • {vendor.subcategory || vendor.category}
               </Text>
 
@@ -322,47 +324,47 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
           <View style={styles.statsCapsulesRow}>
             {/* Outlets */}
             <TouchableOpacity
-              style={styles.capsuleItem}
+              style={[styles.capsuleItem, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
               onPress={() => setActiveTab('Outlets')}
               activeOpacity={0.7}
             >
               <Icon name="storefront-outline" size={18} color="#2563EB" style={{ marginRight: 8 }} />
               <View>
-                <Text style={styles.capsuleNumber}>{vendor.outletCount ?? 1}</Text>
-                <Text style={styles.capsuleLabel}>Outlets</Text>
+                <Text style={[styles.capsuleNumber, { color: colors.text }]}>{vendor.outletCount ?? 1}</Text>
+                <Text style={[styles.capsuleLabel, { color: colors.textMuted }]}>Outlets</Text>
               </View>
             </TouchableOpacity>
 
             {/* Open Issues */}
             <TouchableOpacity
-              style={styles.capsuleItem}
+              style={[styles.capsuleItem, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
               onPress={() => setActiveTab('Issues')}
               activeOpacity={0.7}
             >
               <Icon name="file-document-outline" size={18} color="#EF4444" style={{ marginRight: 8 }} />
               <View>
-                <Text style={styles.capsuleNumber}>{vendor.issueCount ?? 3}</Text>
-                <Text style={styles.capsuleLabel}>Open Issues</Text>
+                <Text style={[styles.capsuleNumber, { color: colors.text }]}>{vendor.issueCount ?? 3}</Text>
+                <Text style={[styles.capsuleLabel, { color: colors.textMuted }]}>Open Issues</Text>
               </View>
             </TouchableOpacity>
 
             {/* Total Visits */}
             <TouchableOpacity
-              style={styles.capsuleItem}
+              style={[styles.capsuleItem, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
               onPress={() => setActiveTab('Activity')}
               activeOpacity={0.7}
             >
               <Icon name="calendar-month-outline" size={18} color="#2563EB" style={{ marginRight: 8 }} />
               <View>
-                <Text style={styles.capsuleNumber}>{vendor.visitCount || 18}</Text>
-                <Text style={styles.capsuleLabel}>Total Visits</Text>
+                <Text style={[styles.capsuleNumber, { color: colors.text }]}>{vendor.visitCount || 18}</Text>
+                <Text style={[styles.capsuleLabel, { color: colors.textMuted }]}>Total Visits</Text>
               </View>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* HORIZONTAL SEGMENT TABS */}
-        <View style={styles.tabsRow}>
+        <View style={[styles.tabsRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           {tabs.map(tab => {
             const isCurrent = activeTab === tab;
             return (
@@ -372,7 +374,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                 onPress={() => setActiveTab(tab)}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.tabText, isCurrent && styles.activeTabText]}>
+                <Text style={[styles.tabText, { color: colors.textMuted }, isCurrent && styles.activeTabText]}>
                   {tab}
                 </Text>
                 {isCurrent && <View style={styles.activeTabIndicator} />}
@@ -385,13 +387,13 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
         {activeTab === 'Overview' && (
           <>
             {/* SECTION 1: CONTACT INFORMATION */}
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={[styles.cardHeaderIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <Icon name="account-outline" size={18} color="#2563EB" />
                   </View>
-                  <Text style={styles.cardHeaderTitle}>Contact Information</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Contact Information</Text>
                 </View>
 
 
@@ -404,8 +406,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="phone" size={16} color="#10B981" />
                   </View>
                   <View style={styles.contactTextCol}>
-                    <Text style={styles.contactLabel}>Phone</Text>
-                    <Text style={styles.contactValue} numberOfLines={1}>
+                    <Text style={[styles.contactLabel, { color: colors.textMuted }]}>Phone</Text>
+                    <Text style={[styles.contactValue, { color: colors.text }]} numberOfLines={1}>
                       {vendor.phone || 'Not Available'}
                     </Text>
                   </View>
@@ -421,8 +423,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="email-outline" size={16} color="#2563EB" />
                   </View>
                   <View style={styles.contactTextCol}>
-                    <Text style={styles.contactLabel}>Email</Text>
-                    <Text style={styles.contactValue} numberOfLines={1}>
+                    <Text style={[styles.contactLabel, { color: colors.textMuted }]}>Email</Text>
+                    <Text style={[styles.contactValue, { color: colors.text }]} numberOfLines={1}>
                       {vendor.email || 'Not Available'}
                     </Text>
                   </View>
@@ -434,8 +436,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="account-group-outline" size={16} color="#8B5CF6" />
                   </View>
                   <View style={styles.contactTextCol}>
-                    <Text style={styles.contactLabel}>Contact Person</Text>
-                    <Text style={styles.contactValue} numberOfLines={1}>
+                    <Text style={[styles.contactLabel, { color: colors.textMuted }]}>Contact Person</Text>
+                    <Text style={[styles.contactValue, { color: colors.text }]} numberOfLines={1}>
                       {vendor.vendorName || vendor.name || 'Not Available'}
                     </Text>
                   </View>
@@ -454,13 +456,13 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
             </View>
 
             {/* SECTION 2: BUSINESS DETAILS */}
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={[styles.cardHeaderIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <Icon name="storefront-outline" size={18} color="#2563EB" />
                   </View>
-                  <Text style={styles.cardHeaderTitle}>Business Details</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Business Details</Text>
                 </View>
               </View>
 
@@ -468,32 +470,32 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                 {/* Row 1 */}
                 <View style={styles.gridRow}>
                   <View style={styles.gridCol}>
-                    <Text style={styles.gridLabel}>Category</Text>
-                    <Text style={styles.gridValue}>{vendor.businessType || 'Retail'}</Text>
+                    <Text style={[styles.gridLabel, { color: colors.textMuted }]}>Category</Text>
+                    <Text style={[styles.gridValue, { color: colors.text }]}>{vendor.businessType || 'Retail'}</Text>
                   </View>
                   <View style={styles.gridCol}>
-                    <Text style={styles.gridLabel}>Sub Category</Text>
-                    <Text style={styles.gridValue}>{vendor.subcategory || 'FMCG'}</Text>
+                    <Text style={[styles.gridLabel, { color: colors.textMuted }]}>Sub Category</Text>
+                    <Text style={[styles.gridValue, { color: colors.text }]}>{vendor.subcategory || 'FMCG'}</Text>
                   </View>
                   <View style={styles.gridCol}>
-                    <Text style={styles.gridLabel}>GST Number (Masked)</Text>
-                    <Text style={styles.gridValue}>{(vendor.gstNumber ? maskGSTIN(vendor.gstNumber) : 'Not Provided')}</Text>
+                    <Text style={[styles.gridLabel, { color: colors.textMuted }]}>GST Number (Masked)</Text>
+                    <Text style={[styles.gridValue, { color: colors.text }]}>{(vendor.gstNumber ? maskGSTIN(vendor.gstNumber) : 'Not Provided')}</Text>
                   </View>
                 </View>
 
                 {/* Row 2 */}
                 <View style={[styles.gridRow, { marginTop: 14 }]}>
                   <View style={styles.gridCol}>
-                    <Text style={styles.gridLabel}>Year of Establishment</Text>
-                    <Text style={styles.gridValue}>{vendor.yearOfEstablishment || 'N/A'}</Text>
+                    <Text style={[styles.gridLabel, { color: colors.textMuted }]}>Year of Establishment</Text>
+                    <Text style={[styles.gridValue, { color: colors.text }]}>{vendor.yearOfEstablishment || 'N/A'}</Text>
                   </View>
                   <View style={styles.gridCol}>
-                    <Text style={styles.gridLabel}>Total Outlets</Text>
-                    <Text style={styles.gridValue}>{vendor.outletCount ?? 1}</Text>
+                    <Text style={[styles.gridLabel, { color: colors.textMuted }]}>Total Outlets</Text>
+                    <Text style={[styles.gridValue, { color: colors.text }]}>{vendor.outletCount ?? 1}</Text>
                   </View>
                   <View style={styles.gridCol}>
-                    <Text style={styles.gridLabel}>Assigned Manager</Text>
-                    <Text style={styles.gridValue}>
+                    <Text style={[styles.gridLabel, { color: colors.textMuted }]}>Assigned Manager</Text>
+                    <Text style={[styles.gridValue, { color: colors.text }]}>
                       {vendor.assignedManager ||
                         (manager
                           ? `${manager.name} (${manager.role.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())})`
@@ -504,11 +506,11 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
               </View>
 
               {/* KYC Document Previews (Aadhaar & PAN) */}
-              <View style={styles.kycSectionContainer}>
+              <View style={[styles.kycSectionContainer, { borderTopColor: colors.border }]}>
                 <View style={styles.kycSectionHeader}>
                   <View style={styles.kycHeaderTitleWrap}>
                     <Icon name="shield-check" size={15} color="#059669" style={{ marginRight: 5 }} />
-                    <Text style={styles.kycSectionTitle}>Statutory KYC Documents</Text>
+                    <Text style={[styles.kycSectionTitle, { color: colors.text }]}>Statutory KYC Documents</Text>
                   </View>
                   {(() => {
                     const rawKyc = String(
@@ -543,7 +545,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                 <View style={styles.kycDocsRow}>
                   {/* AADHAAR CARD PREVIEW */}
                   <TouchableOpacity
-                    style={styles.kycDocCard}
+                    style={[styles.kycDocCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
                     activeOpacity={0.85}
                     onPress={() => {
                       if (vendor.aadhaarUrl || vendor.aadhaarNumber) {
@@ -560,7 +562,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <View style={styles.kycDocTopBar}>
                       <View style={styles.kycDocTagWrap}>
                         <Icon name="card-account-details-outline" size={13} color="#0284C7" />
-                        <Text style={styles.kycDocTag}>Aadhaar Card</Text>
+                        <Text style={[styles.kycDocTag, { color: colors.primary }]}>Aadhaar Card</Text>
                       </View>
                       {vendor.aadhaarUrl ? (
                         <View style={styles.kycDocZoomBadge}>
@@ -592,14 +594,14 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                       )}
                     </View>
 
-                    <Text style={styles.kycDocNumberText}>
+                    <Text style={[styles.kycDocNumberText, { color: colors.text }]}>
                       {vendor.aadhaarNumber ? `•••• •••• ${vendor.aadhaarNumber.slice(-4)}` : 'Not Provided'}
                     </Text>
                   </TouchableOpacity>
 
                   {/* PAN CARD PREVIEW */}
                   <TouchableOpacity
-                    style={styles.kycDocCard}
+                    style={[styles.kycDocCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
                     activeOpacity={0.85}
                     onPress={() => {
                       if (vendor.panUrl || vendor.panNumber || vendor.gstNumber) {
@@ -648,7 +650,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                       )}
                     </View>
 
-                    <Text style={styles.kycDocNumberText}>
+                    <Text style={[styles.kycDocNumberText, { color: colors.text }]}>
                       {vendor.panNumber ? maskPAN(vendor.panNumber) : 'Not Provided'}
                     </Text>
                   </TouchableOpacity>
@@ -687,17 +689,17 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
             </View>
 
             {/* SECTION 3: ADDRESS */}
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.addressContainer}>
                 <View style={styles.addressLeftCol}>
                   <View style={styles.cardHeaderLeft}>
                     <View style={[styles.cardHeaderIconBox, { backgroundColor: '#EFF6FF' }]}>
                       <Icon name="map-marker-outline" size={18} color="#2563EB" />
                     </View>
-                    <Text style={styles.cardHeaderTitle}>Address</Text>
+                    <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Address</Text>
                   </View>
 
-                  <Text style={styles.addressText}>
+                  <Text style={[styles.addressText, { color: colors.textSecondary }]}>
                     {vendor.address || 'Address not provided'}
                     {vendor.pincodeId ? `\nPIN: ${vendor.pincodeId}` : ''}
                   </Text>
@@ -726,21 +728,21 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
             </View>
 
             {/* SECTION 4: ACTIVITY SUMMARY */}
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={[styles.cardHeaderIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <Icon name="poll" size={18} color="#2563EB" />
                   </View>
-                  <Text style={styles.cardHeaderTitle}>Activity Summary</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Activity Summary</Text>
                 </View>
 
                 <TouchableOpacity
-                  style={styles.periodDropdown}
+                  style={[styles.periodDropdown, { backgroundColor: colors.surfaceElevated }]}
                   activeOpacity={0.7}
                   onPress={() => setShowPeriodModal(true)}
                 >
-                  <Text style={styles.periodDropdownText}>{selectedPeriod}</Text>
+                  <Text style={[styles.periodDropdownText, { color: colors.text }]}>{selectedPeriod}</Text>
                   <Icon name="chevron-down" size={14} color="#334155" style={{ marginLeft: 3 }} />
                 </TouchableOpacity>
               </View>
@@ -749,8 +751,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                 {/* Visits */}
                 <View style={[styles.activitySummaryCard, { backgroundColor: '#EFF6FF' }]}>
                   <Icon name="storefront-outline" size={18} color="#2563EB" style={{ marginBottom: 6 }} />
-                  <Text style={styles.activityMetricNumber}>6</Text>
-                  <Text style={styles.activityMetricLabel}>Visits</Text>
+                  <Text style={[styles.activityMetricNumber, { color: colors.text }]}>6</Text>
+                  <Text style={[styles.activityMetricLabel, { color: colors.textMuted }]}>Visits</Text>
                 </View>
 
                 {/* Estimated Sales */}
@@ -759,33 +761,33 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                   <Text style={[styles.activityMetricNumber, { color: '#059669', fontSize: 13 }]}>
                     ₹ 1,24,500
                   </Text>
-                  <Text style={styles.activityMetricLabel}>Estimated Sales</Text>
+                  <Text style={[styles.activityMetricLabel, { color: colors.textMuted }]}>Estimated Sales</Text>
                 </View>
 
                 {/* Orders */}
                 <View style={[styles.activitySummaryCard, { backgroundColor: '#FFFBEB' }]}>
                   <Icon name="package-variant-closed" size={18} color="#F59E0B" style={{ marginBottom: 6 }} />
-                  <Text style={styles.activityMetricNumber}>24</Text>
-                  <Text style={styles.activityMetricLabel}>Orders</Text>
+                  <Text style={[styles.activityMetricNumber, { color: colors.text }]}>24</Text>
+                  <Text style={[styles.activityMetricLabel, { color: colors.textMuted }]}>Orders</Text>
                 </View>
 
                 {/* Issues */}
                 <View style={[styles.activitySummaryCard, { backgroundColor: '#F5F3FF' }]}>
                   <Icon name="file-document-outline" size={18} color="#8B5CF6" style={{ marginBottom: 6 }} />
-                  <Text style={styles.activityMetricNumber}>3</Text>
-                  <Text style={styles.activityMetricLabel}>Issues</Text>
+                  <Text style={[styles.activityMetricNumber, { color: colors.text }]}>3</Text>
+                  <Text style={[styles.activityMetricLabel, { color: colors.textMuted }]}>Issues</Text>
                 </View>
               </View>
             </View>
 
             {/* SECTION 5: RECENT ACTIVITY */}
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={[styles.cardHeaderIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <Icon name="clock-outline" size={18} color="#2563EB" />
                   </View>
-                  <Text style={styles.cardHeaderTitle}>Recent Activity</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Recent Activity</Text>
                 </View>
 
                 <TouchableOpacity onPress={() => setActiveTab('Activity')} activeOpacity={0.7}>
@@ -800,8 +802,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="storefront-outline" size={16} color="#10B981" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>Visited outlet</Text>
-                    <Text style={styles.activityItemSubtitle}>ABC Traders - Main Branch</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>Visited outlet</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>ABC Traders - Main Branch</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>2 days ago</Text>
@@ -815,8 +817,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="cart-outline" size={16} color="#F59E0B" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>New order placed</Text>
-                    <Text style={styles.activityItemSubtitle}>Order #ORD9021 - ₹ 12,450</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>New order placed</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>Order #ORD9021 - ₹ 12,450</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>3 days ago</Text>
@@ -830,8 +832,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="alert-outline" size={16} color="#EF4444" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>Issue reported</Text>
-                    <Text style={styles.activityItemSubtitle}>Product delivery delay</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>Issue reported</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>Product delivery delay</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>5 days ago</Text>
@@ -845,8 +847,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="file-document-outline" size={16} color="#2563EB" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>KYC updated</Text>
-                    <Text style={styles.activityItemSubtitle}>Documents verified successfully</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>KYC updated</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>Documents verified successfully</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>1 week ago</Text>
@@ -862,13 +864,13 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
         {activeTab === 'Activity' && (
           <View>
             {/* Activity Summary Cards */}
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={[styles.cardHeaderIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <Icon name="poll" size={18} color="#2563EB" />
                   </View>
-                  <Text style={styles.cardHeaderTitle}>Activity Summary</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Activity Summary</Text>
                 </View>
 
                 <TouchableOpacity
@@ -884,35 +886,35 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
               <View style={styles.activitySummaryGrid}>
                 <View style={[styles.activitySummaryCard, { backgroundColor: '#EFF6FF' }]}>
                   <Icon name="storefront-outline" size={18} color="#2563EB" style={{ marginBottom: 6 }} />
-                  <Text style={styles.activityMetricNumber}>6</Text>
-                  <Text style={styles.activityMetricLabel}>Visits</Text>
+                  <Text style={[styles.activityMetricNumber, { color: colors.text }]}>6</Text>
+                  <Text style={[styles.activityMetricLabel, { color: colors.textMuted }]}>Visits</Text>
                 </View>
                 <View style={[styles.activitySummaryCard, { backgroundColor: '#ECFDF5' }]}>
                   <Icon name="cart-outline" size={18} color="#10B981" style={{ marginBottom: 6 }} />
                   <Text style={[styles.activityMetricNumber, { color: '#059669', fontSize: 13 }]}>₹ 1,24,500</Text>
-                  <Text style={styles.activityMetricLabel}>Estimated Sales</Text>
+                  <Text style={[styles.activityMetricLabel, { color: colors.textMuted }]}>Estimated Sales</Text>
                 </View>
                 <View style={[styles.activitySummaryCard, { backgroundColor: '#FFFBEB' }]}>
                   <Icon name="package-variant-closed" size={18} color="#F59E0B" style={{ marginBottom: 6 }} />
-                  <Text style={styles.activityMetricNumber}>24</Text>
-                  <Text style={styles.activityMetricLabel}>Orders</Text>
+                  <Text style={[styles.activityMetricNumber, { color: colors.text }]}>24</Text>
+                  <Text style={[styles.activityMetricLabel, { color: colors.textMuted }]}>Orders</Text>
                 </View>
                 <View style={[styles.activitySummaryCard, { backgroundColor: '#F5F3FF' }]}>
                   <Icon name="file-document-outline" size={18} color="#8B5CF6" style={{ marginBottom: 6 }} />
-                  <Text style={styles.activityMetricNumber}>3</Text>
-                  <Text style={styles.activityMetricLabel}>Issues</Text>
+                  <Text style={[styles.activityMetricNumber, { color: colors.text }]}>3</Text>
+                  <Text style={[styles.activityMetricLabel, { color: colors.textMuted }]}>Issues</Text>
                 </View>
               </View>
             </View>
 
             {/* Timeline */}
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={[styles.cardHeaderIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <Icon name="history" size={18} color="#2563EB" />
                   </View>
-                  <Text style={styles.cardHeaderTitle}>Complete Activity Log</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Complete Activity Log</Text>
                 </View>
               </View>
 
@@ -922,8 +924,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="storefront-outline" size={16} color="#10B981" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>Visited outlet</Text>
-                    <Text style={styles.activityItemSubtitle}>{vendor.businessName} - Verified Location</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>Visited outlet</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>{vendor.businessName} - Verified Location</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>2 days ago</Text>
@@ -935,8 +937,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="cart-outline" size={16} color="#F59E0B" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>New order placed</Text>
-                    <Text style={styles.activityItemSubtitle}>Order #ORD9021 - ₹ 12,450</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>New order placed</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>Order #ORD9021 - ₹ 12,450</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>3 days ago</Text>
@@ -948,8 +950,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="alert-outline" size={16} color="#EF4444" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>Issue reported</Text>
-                    <Text style={styles.activityItemSubtitle}>Product delivery delay (Carton shortage)</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>Issue reported</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>Product delivery delay (Carton shortage)</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>5 days ago</Text>
@@ -961,8 +963,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="truck-check-outline" size={16} color="#10B981" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>Order delivered</Text>
-                    <Text style={styles.activityItemSubtitle}>Order #ORD8955 - ₹ 48,200</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>Order delivered</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>Order #ORD8955 - ₹ 48,200</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>6 days ago</Text>
@@ -974,8 +976,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="file-document-outline" size={16} color="#2563EB" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>KYC updated</Text>
-                    <Text style={styles.activityItemSubtitle}>GST & FSSAI certificates approved</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>KYC updated</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>GST & FSSAI certificates approved</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>1 week ago</Text>
@@ -987,8 +989,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <Icon name="clipboard-check-outline" size={16} color="#8B5CF6" />
                   </View>
                   <View style={styles.activityItemContent}>
-                    <Text style={styles.activityItemTitle}>Quarterly Audit</Text>
-                    <Text style={styles.activityItemSubtitle}>Compliance score: 98% (Pass)</Text>
+                    <Text style={[styles.activityItemTitle, { color: colors.text }]}>Quarterly Audit</Text>
+                    <Text style={[styles.activityItemSubtitle, { color: colors.textMuted }]}>Compliance score: 98% (Pass)</Text>
                   </View>
                   <View style={styles.activityItemRight}>
                     <Text style={styles.activityItemTime}>2 weeks ago</Text>
@@ -1003,13 +1005,13 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
         {activeTab === 'Issues' && (
           <View>
             {/* Issues Summary */}
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={[styles.cardHeaderIconBox, { backgroundColor: '#FEF2F2' }]}>
                     <Icon name="alert-circle-outline" size={18} color="#EF4444" />
                   </View>
-                  <Text style={styles.cardHeaderTitle}>Open Issues (3)</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Open Issues (3)</Text>
                 </View>
 
                 <TouchableOpacity style={styles.editButton} onPress={handleAddIssue} activeOpacity={0.7}>
@@ -1021,12 +1023,12 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
               {/* Issue 1 */}
               <View style={[styles.issueItemBox, { borderLeftColor: '#EF4444' }]}>
                 <View style={styles.issueItemHeader}>
-                  <Text style={styles.issueItemTitle}>Product delivery delay</Text>
+                  <Text style={[styles.issueItemTitle, { color: colors.text }]}>Product delivery delay</Text>
                   <View style={[styles.issueTag, { backgroundColor: '#FEE2E2' }]}>
                     <Text style={[styles.issueTagText, { color: '#DC2626' }]}>High</Text>
                   </View>
                 </View>
-                <Text style={styles.issueItemDesc}>Batch of 50 FMCG cartons delayed by 48 hours. Supplier contacted.</Text>
+                <Text style={[styles.issueItemDesc, { color: colors.textSecondary }]}>Batch of 50 FMCG cartons delayed by 48 hours. Supplier contacted.</Text>
                 <View style={styles.issueItemMeta}>
                   <Text style={styles.issueMetaText}>Reported 5 days ago</Text>
                   <Text style={[styles.issueStatusPill, { color: '#D97706', backgroundColor: '#FEF3C7' }]}>Open</Text>
@@ -1036,12 +1038,12 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
               {/* Issue 2 */}
               <View style={[styles.issueItemBox, { borderLeftColor: '#F59E0B' }]}>
                 <View style={styles.issueItemHeader}>
-                  <Text style={styles.issueItemTitle}>Defective stock replacement</Text>
+                  <Text style={[styles.issueItemTitle, { color: colors.text }]}>Defective stock replacement</Text>
                   <View style={[styles.issueTag, { backgroundColor: '#FEF3C7' }]}>
                     <Text style={[styles.issueTagText, { color: '#D97706' }]}>Medium</Text>
                   </View>
                 </View>
-                <Text style={styles.issueItemDesc}>Damaged items received from batch #492. Return authorization issued.</Text>
+                <Text style={[styles.issueItemDesc, { color: colors.textSecondary }]}>Damaged items received from batch #492. Return authorization issued.</Text>
                 <View style={styles.issueItemMeta}>
                   <Text style={styles.issueMetaText}>Reported 12 days ago</Text>
                   <Text style={[styles.issueStatusPill, { color: '#2563EB', backgroundColor: '#EFF6FF' }]}>In Progress</Text>
@@ -1051,12 +1053,12 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
               {/* Issue 3 */}
               <View style={[styles.issueItemBox, { borderLeftColor: '#3B82F6' }]}>
                 <View style={styles.issueItemHeader}>
-                  <Text style={styles.issueItemTitle}>Invoice GST reconciliation</Text>
+                  <Text style={[styles.issueItemTitle, { color: colors.text }]}>Invoice GST reconciliation</Text>
                   <View style={[styles.issueTag, { backgroundColor: '#EFF6FF' }]}>
                     <Text style={[styles.issueTagText, { color: '#2563EB' }]}>Low</Text>
                   </View>
                 </View>
-                <Text style={styles.issueItemDesc}>GST mismatch between invoice #INV-4921 and portal submission.</Text>
+                <Text style={[styles.issueItemDesc, { color: colors.textSecondary }]}>GST mismatch between invoice #INV-4921 and portal submission.</Text>
                 <View style={styles.issueItemMeta}>
                   <Text style={styles.issueMetaText}>Reported 18 days ago</Text>
                   <Text style={[styles.issueStatusPill, { color: '#2563EB', backgroundColor: '#EFF6FF' }]}>In Progress</Text>
@@ -1069,13 +1071,13 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
         {/* TAB CONTENT: OUTLETS */}
         {activeTab === 'Outlets' && (
           <View>
-            <View style={styles.cardSection}>
+            <View style={[styles.cardSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={[styles.cardHeaderIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <Icon name="storefront-outline" size={18} color="#2563EB" />
                   </View>
-                  <Text style={styles.cardHeaderTitle}>
+                  <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>
                     Outlets & Branches ({Array.isArray((vendor as any).outlets) ? (vendor as any).outlets.length : 1})
                   </Text>
                 </View>
@@ -1086,8 +1088,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                   <View key={idx} style={[styles.outletItemCard, idx > 0 && { marginTop: 10 }]}>
                     <View style={styles.outletTopRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.outletName}>{outlet.name || `${vendor.businessName} - Branch ${idx + 1}`}</Text>
-                        <Text style={styles.outletAddress}>{outlet.address || vendor.address || 'Address not specified'}</Text>
+                        <Text style={[styles.outletName, { color: colors.text }]}>{outlet.name || `${vendor.businessName} - Branch ${idx + 1}`}</Text>
+                        <Text style={[styles.outletAddress, { color: colors.textMuted }]}>{outlet.address || vendor.address || 'Address not specified'}</Text>
                         <Text style={styles.outletManager}>Contact: {outlet.manager || outlet.contactPerson || vendor.vendorName || 'Branch Manager'}</Text>
                       </View>
                       <View style={styles.outletActions}>
@@ -1110,11 +1112,11 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                   </View>
                 ))
               ) : (
-                <View style={styles.outletItemCard}>
+                <View style={[styles.outletItemCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
                   <View style={styles.outletTopRow}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.outletName}>{vendor.businessName} - Main Storefront</Text>
-                      <Text style={styles.outletAddress}>{vendor.address || 'Field Location'}</Text>
+                      <Text style={[styles.outletName, { color: colors.text }]}>{vendor.businessName} - Main Storefront</Text>
+                      <Text style={[styles.outletAddress, { color: colors.textMuted }]}>{vendor.address || 'Field Location'}</Text>
                       <Text style={styles.outletManager}>Contact: {vendor.vendorName || vendor.name || 'Store Owner'}</Text>
                     </View>
                     <View style={styles.outletActions}>
@@ -1164,8 +1166,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
         onRequestClose={() => setPreviewDocModal(prev => ({ ...prev, visible: false }))}
       >
         <View style={styles.previewModalBackdrop}>
-          <View style={styles.previewModalContainer}>
-            <View style={styles.previewModalHeader}>
+          <View style={[styles.previewModalContainer, { backgroundColor: colors.surfaceElevated }]}>
+            <View style={[styles.previewModalHeader, { borderBottomColor: colors.border }]}>
               <View style={styles.previewModalTitleGroup}>
                 <View style={[styles.previewModalIconBox, { backgroundColor: previewDocModal.docType === 'AADHAAR' ? '#E0F2FE' : '#FEF3C7' }]}>
                   <Icon
@@ -1175,8 +1177,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                   />
                 </View>
                 <View style={{ marginLeft: 10, flexShrink: 1 }}>
-                  <Text style={styles.previewModalTitle}>{previewDocModal.title}</Text>
-                  <Text style={styles.previewModalSubtitle}>{previewDocModal.docNumber}</Text>
+                  <Text style={[styles.previewModalTitle, { color: colors.text }]}>{previewDocModal.title}</Text>
+                  <Text style={[styles.previewModalSubtitle, { color: colors.textMuted }]}>{previewDocModal.docNumber}</Text>
                 </View>
               </View>
 
@@ -1189,7 +1191,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
               </TouchableOpacity>
             </View>
 
-            <View style={styles.previewModalBody}>
+            <View style={[styles.previewModalBody, { backgroundColor: colors.surface }]}>
               {previewDocModal.imageUri ? (
                 <Image
                   source={{ uri: previewDocModal.imageUri }}

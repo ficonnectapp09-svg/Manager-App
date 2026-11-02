@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface FICOperatingHoursModalProps {
   visible: boolean;
@@ -57,6 +58,7 @@ export const FICOperatingHoursModal: React.FC<FICOperatingHoursModalProps> = ({
   onSelectHours,
   onClose,
 }) => {
+  const { colors, isDark } = useTheme();
   const [selectedOpen, setSelectedOpen] = useState<string>('09:00 AM');
   const [selectedClose, setSelectedClose] = useState<string>('09:00 PM');
   const [is24Hours, setIs24Hours] = useState<boolean>(false);
@@ -94,16 +96,16 @@ export const FICOperatingHoursModal: React.FC<FICOperatingHoursModalProps> = ({
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={styles.cardContainer}>
+            <View style={[styles.cardContainer, { backgroundColor: colors.surfaceElevated }]}>
               {/* Header */}
-              <View style={styles.header}>
-                <View style={styles.dragHandle} />
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={[styles.dragHandle, isDark && { backgroundColor: colors.borderHighlight }]} />
                 <View style={styles.titleRow}>
                   <View style={styles.titleWithIcon}>
                     <Icon name="clock-outline" size={22} color="#EA580C" style={{ marginRight: 8 }} />
-                    <Text style={styles.title}>Select Operating Hours</Text>
+                    <Text style={[styles.title, { color: colors.text }]}>Select Operating Hours</Text>
                   </View>
-                  <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <TouchableOpacity onPress={onClose} style={[styles.closeBtn, isDark && { backgroundColor: colors.surface }]} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                     <Icon name="close" size={20} color="#64748B" />
                   </TouchableOpacity>
                 </View>
@@ -111,7 +113,7 @@ export const FICOperatingHoursModal: React.FC<FICOperatingHoursModalProps> = ({
 
               <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
                 {/* Quick Presets */}
-                <Text style={styles.sectionLabel}>Quick Presets (One Tap)</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Quick Presets (One Tap)</Text>
                 <View style={styles.presetsGrid}>
                   {QUICK_PRESETS.map(p => {
                     const isSel = is24Hours
@@ -120,11 +122,11 @@ export const FICOperatingHoursModal: React.FC<FICOperatingHoursModalProps> = ({
                     return (
                       <TouchableOpacity
                         key={p.label}
-                        style={[styles.presetChip, isSel && styles.presetChipActive]}
+                        style={[styles.presetChip, { backgroundColor: colors.surface, borderColor: colors.border }, isSel && styles.presetChipActive]}
                         onPress={() => handleSelectPreset(p)}
                         activeOpacity={0.75}
                       >
-                        <Text style={[styles.presetChipText, isSel && styles.presetChipTextActive]}>
+                        <Text style={[styles.presetChipText, { color: colors.textSecondary }, isSel && styles.presetChipTextActive]}>
                           {p.label}
                         </Text>
                       </TouchableOpacity>
@@ -135,18 +137,18 @@ export const FICOperatingHoursModal: React.FC<FICOperatingHoursModalProps> = ({
                 {!is24Hours && (
                   <>
                     {/* Opening Time */}
-                    <Text style={styles.sectionLabel}>Opening Time</Text>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Opening Time</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
                       {OPENING_TIMES.map(t => {
                         const isSel = selectedOpen === t;
                         return (
                           <TouchableOpacity
                             key={`open-${t}`}
-                            style={[styles.timeChip, isSel && styles.timeChipActive]}
+                            style={[styles.timeChip, { backgroundColor: colors.surface, borderColor: colors.border }, isSel && styles.timeChipActive]}
                             onPress={() => setSelectedOpen(t)}
                             activeOpacity={0.75}
                           >
-                            <Text style={[styles.timeChipText, isSel && styles.timeChipTextActive]}>
+                            <Text style={[styles.timeChipText, { color: colors.textSecondary }, isSel && styles.timeChipTextActive]}>
                               {t}
                             </Text>
                           </TouchableOpacity>
@@ -186,7 +188,7 @@ export const FICOperatingHoursModal: React.FC<FICOperatingHoursModalProps> = ({
               </ScrollView>
 
               {/* Footer Save Button */}
-              <View style={styles.footer}>
+              <View style={[styles.footer, { borderTopColor: colors.border }]}>
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSaveHours} activeOpacity={0.85}>
                   <Text style={styles.saveBtnText}>Save Operating Hours</Text>
                 </TouchableOpacity>

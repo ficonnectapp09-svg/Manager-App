@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { VendorStatus, TaskStatus, IssueStatus } from '../../types';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export type AnyStatus = VendorStatus | TaskStatus | IssueStatus | string;
 
@@ -12,6 +13,8 @@ export interface FICStatusBadgeProps {
 }
 
 export const FICStatusBadge: React.FC<FICStatusBadgeProps> = ({ status, style, showIcon = true }) => {
+  const { colors } = useTheme();
+
   const getStatusConfig = () => {
     switch (status) {
       case VendorStatus.ONBOARDED:
@@ -20,8 +23,8 @@ export const FICStatusBadge: React.FC<FICStatusBadgeProps> = ({ status, style, s
       case TaskStatus.RESOLVED:
         return {
           label: String(status).replace('_', ' '),
-          bg: theme.colors.successLight,
-          text: theme.colors.success,
+          bg: colors.successLight,
+          text: colors.success,
           icon: '✓',
         };
       case VendorStatus.NOT_INTERESTED:
@@ -29,8 +32,8 @@ export const FICStatusBadge: React.FC<FICStatusBadgeProps> = ({ status, style, s
       case IssueStatus.REJECTED:
         return {
           label: String(status).replace('_', ' '),
-          bg: theme.colors.errorLight,
-          text: theme.colors.error,
+          bg: colors.errorLight,
+          text: colors.error,
           icon: '✕',
         };
       case TaskStatus.IN_PROGRESS:
@@ -38,8 +41,8 @@ export const FICStatusBadge: React.FC<FICStatusBadgeProps> = ({ status, style, s
       case VendorStatus.VISITED:
         return {
           label: String(status).replace('_', ' '),
-          bg: theme.colors.warningLight,
-          text: theme.colors.warning,
+          bg: colors.warningLight,
+          text: colors.warning,
           icon: '⏳',
         };
       case TaskStatus.ASSIGNED:
@@ -48,8 +51,8 @@ export const FICStatusBadge: React.FC<FICStatusBadgeProps> = ({ status, style, s
       default:
         return {
           label: String(status).replace('_', ' '),
-          bg: theme.colors.infoLight,
-          text: theme.colors.info,
+          bg: colors.infoLight,
+          text: colors.info,
           icon: '⭕',
         };
     }

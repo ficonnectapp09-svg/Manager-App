@@ -23,6 +23,7 @@ class MainApplication : Application(), ReactApplication {
               add(NativeImagePickerPackage())
               add(NativeAudioPackage())
               add(NativeReportExportPackage())
+              add(NativeStoragePackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

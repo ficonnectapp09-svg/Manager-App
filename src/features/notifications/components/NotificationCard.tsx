@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppNotification, NotificationCategory } from '../../../types';
 import { theme } from '../../../theme';
 import { FICCard } from '../../../components/ui/FICCard';
+import { useTheme } from '../../../hooks/useTheme';
 
 export interface NotificationCardProps {
   notification: AppNotification;
@@ -58,6 +59,7 @@ export const getNotificationIcon = (notification: AppNotification): string => {
 };
 
 export const NotificationCard: React.FC<NotificationCardProps> = ({ notification, onPress }) => {
+  const { colors, isDark } = useTheme();
   const isUnread = !notification.isRead;
   const icon = getNotificationIcon(notification);
   const timeText = formatNotificationTime(notification.createdAt);
@@ -85,7 +87,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({ notification
                   {notification.title}
                 </Text>
               </View>
-              <Text style={styles.timeText}>{timeText}</Text>
+              <Text style={[styles.timeText, { color: colors.textMuted }]}>{timeText}</Text>
             </View>
 
             <Text style={[styles.bodyText, isUnread && styles.unreadBodyText]} numberOfLines={2}>

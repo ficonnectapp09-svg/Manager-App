@@ -41,8 +41,10 @@ import { ProfileScreen } from '../../features/profile';
 import { SettingsScreen } from '../../features/settings';
 import { FICBottomTabBar } from '../../components/ui/FICBottomTabBar';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export const MainDrawerNavigator: React.FC = () => {
+  const { colors, isDark } = useTheme();
   const [currentRoute, setCurrentRoute] = useState<string>('Dashboard');
   const [routeParams, setRouteParams] = useState<Record<string, any>>({});
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
@@ -386,7 +388,7 @@ export const MainDrawerNavigator: React.FC = () => {
   const shouldShowBottomBar = !HIDE_BOTTOM_BAR_ROUTES.includes(currentRoute);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.screenWrapper}>
         {renderCurrentScreen()}
       </View>
@@ -416,7 +418,7 @@ export const MainDrawerNavigator: React.FC = () => {
         onRequestClose={() => setIsDrawerOpen(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.drawerWrapper}>
+          <View style={[styles.drawerWrapper, { backgroundColor: colors.surface }]}>
             <DrawerContent
               currentRoute={currentRoute}
               onNavigate={handleNavigate}

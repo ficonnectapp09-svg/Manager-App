@@ -25,6 +25,7 @@ import { OrbitRing } from './OrbitRing';
 import { SuccessBurst } from './SuccessBurst';
 import { Checkmark } from './Checkmark';
 import { triggerHaptic } from './haptics';
+import { useTheme } from '../../hooks/useTheme';
 
 export const OtpVerification = React.memo(
   forwardRef<OtpVerificationRef, OtpVerificationProps>(
@@ -40,6 +41,7 @@ export const OtpVerification = React.memo(
       },
       ref
     ) => {
+      const { colors, isDark } = useTheme();
       const { width: windowWidth } = useWindowDimensions();
       const cardWidth = Math.min(windowWidth - 32, 360);
 
@@ -290,9 +292,9 @@ export const OtpVerification = React.memo(
           style={styles.keyboardAvoid}
         >
           <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
-            <View style={[styles.card, { width: cardWidth }]}>
+            <View style={[styles.card, { width: cardWidth, backgroundColor: colors.surface, borderColor: colors.border }]}>
               {/* Drag Handle Pill */}
-              <View style={styles.dragPill} />
+              <View style={[styles.dragPill, { backgroundColor: colors.border }]} />
 
               {/* Title & Subtitle Header Container */}
               <View style={styles.headerContainer}>
@@ -304,14 +306,14 @@ export const OtpVerification = React.memo(
                   ]}
                   pointerEvents="none"
                 >
-                  <Text style={styles.title}>{title}</Text>
-                  <Text style={styles.subtitle}>
+                  <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                  <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                     {subtitle ? (
                       subtitle
                     ) : (
                       <>
                         Enter the {length}-digit code sent to{' '}
-                        <Text style={styles.phoneHighlight}>{phoneNumber}</Text>
+                        <Text style={[styles.phoneHighlight, { color: colors.primary }]}>{phoneNumber}</Text>
                       </>
                     )}
                   </Text>

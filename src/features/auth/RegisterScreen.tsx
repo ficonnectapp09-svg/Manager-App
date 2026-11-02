@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ManagerRole } from '../../types';
 import { FICTextInput } from '../../components/ui/FICTextInput';
+import { useTheme } from '../../hooks/useTheme';
 import { FICButton } from '../../components/ui/FICButton';
 
 import { ENV } from '../../constants/env';
@@ -299,6 +300,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   onBackToLogin,
   onRegisterSuccess,
 }) => {
+  const { colors, isDark } = useTheme();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -471,15 +473,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     : [];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       {/* Header */}
-      <View style={styles.headerRow}>
+      <View style={[styles.headerRow, { backgroundColor: colors.surfaceElevated, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.backButton} onPress={onBackToLogin} activeOpacity={0.7}>
           <Icon name="arrow-left" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Manager Registration</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Manager Registration</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -488,24 +490,24 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionSubtitle}>
+        <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
           Apply for territory manager onboarding. Node allocations are strictly limited to 2 managers per jurisdiction.
         </Text>
 
         {/* 1. ROLE SELECTION */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>1. Assigned Role Tier</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>1. Assigned Role Tier</Text>
           <View style={styles.roleGrid}>
             {ROLES.map(r => {
               const isSelected = selectedRole === r.value;
               return (
                 <TouchableOpacity
                   key={r.value}
-                  style={[styles.roleChip, isSelected && styles.activeRoleChip]}
+                  style={[styles.roleChip, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }, isSelected && styles.activeRoleChip]}
                   onPress={() => handleRoleChange(r.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.roleChipText, isSelected && styles.activeRoleChipText]}>
+                  <Text style={[styles.roleChipText, { color: colors.textSecondary }, isSelected && styles.activeRoleChipText]}>
                     {r.label}
                   </Text>
                 </TouchableOpacity>
@@ -515,12 +517,12 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         </View>
 
         {/* 2. TERRITORY HIERARCHY CASCADING SELECTORS */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>2. Territory Jurisdiction</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>2. Territory Jurisdiction</Text>
 
           {/* State */}
           <View style={styles.districtHeaderRow}>
-            <Text style={styles.fieldLabel}>State *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>State *</Text>
             {selectedState ? (
               <View style={styles.selectedDistrictBadgeContainer}>
                 <Text style={styles.selectedDistrictBadgeText}>
@@ -531,10 +533,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           </View>
 
           {/* State Search Bar */}
-          <View style={styles.searchBoxContainer}>
+          <View style={[styles.searchBoxContainer, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
             <Icon name="magnify" size={18} color="#64748B" style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.text }]}
               placeholder="Search or enter state (e.g. Maharashtra, Kerala)..."
               placeholderTextColor="#94A3B8"
               value={stateSearchQuery}
@@ -556,10 +558,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             {filteredStates.map(s => (
               <TouchableOpacity
                 key={s.id}
-                style={[styles.optionPill, selectedState === s.id && styles.activeOptionPill]}
+                style={[styles.optionPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }, selectedState === s.id && styles.activeOptionPill]}
                 onPress={() => handleStateChange(s.id, s.name)}
               >
-                <Text style={[styles.optionPillText, selectedState === s.id && styles.activeOptionPillText]}>
+                <Text style={[styles.optionPillText, { color: colors.textSecondary }, selectedState === s.id && styles.activeOptionPillText]}>
                   {s.name}
                 </Text>
               </TouchableOpacity>
@@ -588,7 +590,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             selectedRole === ManagerRole.PINCODE_MANAGER) && (
             <>
               <View style={styles.districtHeaderRow}>
-                <Text style={styles.fieldLabel}>District *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>District *</Text>
                 {selectedDistrict ? (
                   <View style={styles.selectedDistrictBadgeContainer}>
                     <Text style={styles.selectedDistrictBadgeText}>
@@ -670,7 +672,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           {(selectedRole === ManagerRole.DIVISION_MANAGER ||
             selectedRole === ManagerRole.PINCODE_MANAGER) && (
             <>
-              <Text style={styles.fieldLabel}>Division *</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Division *</Text>
               {divisions.length === 0 ? (
                 <Text style={styles.placeholderText}>Select a District first</Text>
               ) : (
@@ -694,7 +696,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           {/* Pincode (for L4) */}
           {selectedRole === ManagerRole.PINCODE_MANAGER && (
             <>
-              <Text style={styles.fieldLabel}>Assigned Pincode *</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Assigned Pincode *</Text>
               {pincodes.length === 0 ? (
                 <Text style={styles.placeholderText}>Select a Division first</Text>
               ) : (
@@ -749,8 +751,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         </View>
 
         {/* 3. MANAGER CREDENTIALS */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>3. Manager Details</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>3. Manager Details</Text>
           <FICTextInput
             label="Full Legal Name *"
             placeholder="e.g. Anand Sharma"

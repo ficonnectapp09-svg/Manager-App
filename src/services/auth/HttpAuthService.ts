@@ -308,12 +308,26 @@ export class HttpAuthService implements IAuthService {
       }
     } catch (err: any) {
       console.warn('[HttpAuthService] /auth/me call error:', err);
-      // If server explicitly returned 401/403, session has expired. Wipe invalid session!
-      if (err?.status === 401 || err?.status === 403 || err?.code === 'UNAUTHORIZED') {
-        await services.storageService.clearAuthTokens();
-        await services.storageService.removeItem('ACTIVE_MGR_ID');
-        await services.storageService.removeItem('ACTIVE_MGR_OBJECT');
-        return null;
+      if (err?.status === 401 || err?.code === 'UNAUTHORIZED') {
+        try {
+          const refreshRes = await apiClient.post<any>('/auth/refresh', {}, { token, timeoutMs: 10000 });
+          const newToken = refreshRes?.token || refreshRes?.data?.token;
+          if (newToken) {
+            await services.storageService.setAuthToken(newToken);
+            const retryRes = await apiClient.get<any>('/auth/me', { token: newToken, timeoutMs: 15000 });
+            const retryUser = retryRes.user || retryRes.data?.user || retryRes.data;
+            if (retryUser && (retryUser.id || retryUser._id || retryUser.email)) {
+              const manager = this.normalizeManager(retryUser);
+              await services.storageService.setItem('ACTIVE_MGR_OBJECT', JSON.stringify(manager));
+              return manager;
+            }
+          }
+        } catch {
+          await services.storageService.clearAuthTokens();
+          await services.storageService.removeItem('ACTIVE_MGR_ID');
+          await services.storageService.removeItem('ACTIVE_MGR_OBJECT');
+          return null;
+        }
       }
     }
 

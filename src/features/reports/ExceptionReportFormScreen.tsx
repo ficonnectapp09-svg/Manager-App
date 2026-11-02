@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { Vendor, ReportType } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
@@ -34,6 +35,7 @@ export const ExceptionReportFormScreen: React.FC<ExceptionReportFormScreenProps>
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -158,7 +160,7 @@ export const ExceptionReportFormScreen: React.FC<ExceptionReportFormScreenProps>
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Exception Report"

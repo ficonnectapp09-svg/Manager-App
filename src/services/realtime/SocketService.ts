@@ -17,7 +17,11 @@ export type SocketEventType =
   | 'issue.status.updated'
   | 'issue.escalated'
   | 'issue.resolved'
-  | 'connection.status';
+  | 'connection.status'
+  | 'task'
+  | 'vendor'
+  | 'manager'
+  | '*';
 
 export interface RealtimeEventPayload<T = any> {
   type: SocketEventType;
@@ -209,19 +213,50 @@ class SocketService {
     if (!rawPayload) return;
     if (rawPayload.type === 'pong' || rawPayload.type === 'heartbeat') return;
 
-    const eventName: SocketEventType = rawPayload.type || rawPayload.event || rawPayload.eventType;
-    if (!eventName) return;
+    const rawEvent = String(rawPayload.type || rawPayload.event || rawPayload.eventType || '').trim();
+    const entity = String(rawPayload.entity || '').trim().toLowerCase();
+    const action = String(rawPayload.action || '').trim().toLowerCase();
+
+    if (!rawEvent && !entity) return;
 
     const payload: RealtimeEventPayload = {
-      type: eventName,
-      entityId: rawPayload.entityId || rawPayload.id || '',
+      type: (rawEvent || `${entity}.${action}`) as SocketEventType,
+      entityId: String(rawPayload.entityId || rawPayload.id || rawPayload.data?.id || rawPayload.data?._id || ''),
       scope: rawPayload.scope,
       data: rawPayload.data || rawPayload,
       changedFields: rawPayload.changedFields,
       timestamp: rawPayload.timestamp || new Date().toISOString(),
     };
 
-    this.dispatch(eventName, payload);
+    // 1. Dispatch exact event name
+    if (rawEvent) {
+      this.dispatch(rawEvent as SocketEventType, payload);
+    }
+
+    // 2. Dispatch normalized dot-notation variants
+    const dotVariant = rawEvent.toLowerCase().replace(/_/g, '.');
+    if (dotVariant && dotVariant !== rawEvent) {
+      this.dispatch(dotVariant as SocketEventType, payload);
+    }
+
+    // 3. Dispatch entity-action combinations (e.g. task.updated, task.status.updated)
+    if (entity && action) {
+      this.dispatch(`${entity}.${action}` as SocketEventType, payload);
+      if (action.includes('status')) {
+        this.dispatch(`${entity}.status.updated` as SocketEventType, payload);
+      }
+      if (action === 'updated') {
+        this.dispatch(`${entity}.status.updated` as SocketEventType, payload);
+      }
+    }
+
+    // 4. Dispatch entity-level wildcard (e.g. 'task', 'vendor')
+    if (entity) {
+      this.dispatch(entity as SocketEventType, payload);
+    }
+
+    // 5. Dispatch global wildcard '*'
+    this.dispatch('*' as any, payload);
   }
 
   disconnect() {

@@ -13,12 +13,13 @@ export class HttpTaskRepository implements ITaskRepository {
 
   private mapStatus(rawStatus: any): TaskStatus {
     const s = String(rawStatus || '').toUpperCase().trim();
-    if (s === 'COMPLETED' || s === 'CLOSED') return TaskStatus.COMPLETED;
-    if (s === 'RESOLVED') return TaskStatus.RESOLVED;
-    if (s.includes('IN PROGRESS') || s.includes('IN_PROGRESS') || s === 'ACCEPTED') return TaskStatus.IN_PROGRESS;
-    if (s === 'BLOCKED' || s === 'SUSPENDED') return TaskStatus.BLOCKED;
-    if (s === 'REJECTED' || s === 'CANCELLED') return TaskStatus.REJECTED;
-    if (s.includes('PENDING') || s === 'OPEN' || s === 'ASSIGNED') return TaskStatus.PENDING;
+    // Prioritize definitive terminal and completion statuses (Module 2)
+    if (s === 'COMPLETED' || s === 'CLOSED' || s === 'RESOLVED' || s.includes('COMPLETE')) return TaskStatus.COMPLETED;
+    if (s === 'REJECTED' || s === 'CANCELLED' || s.includes('REJECT')) return TaskStatus.REJECTED;
+    if (s === 'BLOCKED' || s === 'SUSPENDED' || s.includes('SUSPEND')) return TaskStatus.BLOCKED;
+    if (s.includes('IN PROGRESS') || s.includes('IN_PROGRESS')) return TaskStatus.IN_PROGRESS;
+    if (s === 'ACCEPTED') return TaskStatus.IN_PROGRESS;
+    if (s.includes('PENDING') || s === 'OPEN' || s === 'ASSIGNED' || s.includes('REVIEW')) return TaskStatus.PENDING;
     return TaskStatus.PENDING;
   }
 
@@ -37,7 +38,11 @@ export class HttpTaskRepository implements ITaskRepository {
     const id = String(raw.id || raw._id || raw.taskNumber || '');
     const title = raw.title || (raw.taskNumber ? `Task ${raw.taskNumber}` : 'Field Inspection Task');
     const description = raw.description || raw.remarks || raw.notes || '';
-    const status = this.mapStatus(raw.status || raw.executionStatus || raw.assignmentStatus);
+    // Strictly respect authoritative backend task status (Module 2)
+    const rawStatus = (raw.status !== undefined && raw.status !== null && String(raw.status).trim().length > 0)
+      ? raw.status
+      : (raw.executionStatus || raw.assignmentStatus);
+    const status = this.mapStatus(rawStatus);
     const priority = this.mapPriority(raw.priority);
 
     // Resolve human-readable territory text

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface FICBadgeProps {
   label: string;
@@ -13,16 +14,21 @@ export interface FICBadgeProps {
 
 export const FICBadge: React.FC<FICBadgeProps> = ({
   label,
-  backgroundColor = theme.colors.divider,
-  textColor = theme.colors.textSecondary,
+  backgroundColor,
+  textColor,
   icon,
   style,
   textStyle,
 }) => {
+  const { colors } = useTheme();
+
+  const finalBg = backgroundColor || colors.divider;
+  const finalTextColor = textColor || colors.textSecondary;
+
   return (
-    <View style={[styles.badge, { backgroundColor }, style]}>
+    <View style={[styles.badge, { backgroundColor: finalBg }, style]}>
       {icon}
-      <Text style={[styles.text, { color: textColor }, icon ? { marginLeft: 4 } : null, textStyle]}>
+      <Text style={[styles.text, { color: finalTextColor }, icon ? { marginLeft: 4 } : null, textStyle]}>
         {label}
       </Text>
     </View>

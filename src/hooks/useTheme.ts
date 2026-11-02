@@ -1,5 +1,7 @@
-import { theme, Theme } from '../theme';
+import { useThemeContext, ThemeContextValue } from '../context/ThemeContext';
 
-export const useTheme = (): Theme => {
-  return theme;
+export const useTheme = (): ThemeContextValue => {
+  return useThemeContext();
 };
+
+export type { ThemeMode, ThemeContextValue } from '../context/ThemeContext';

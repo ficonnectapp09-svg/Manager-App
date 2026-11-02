@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { services } from '../../services';
+import { useTheme } from '../../hooks/useTheme';
 
 const { NativeAudio } = NativeModules;
 
@@ -49,6 +50,7 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
   onStopRecording,
   onDeleteRecording,
 }) => {
+  const { colors, isDark } = useTheme();
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
@@ -443,7 +445,7 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
           <View style={styles.recordingMeta}>
             <Text style={styles.liveRecLabel}>🔴 RECORDING REAL MIC AUDIO...</Text>
             <Text style={styles.liveRecTimer}>{formatTime(recTimer)}</Text>
-            <Text style={styles.recAdviceText}>
+            <Text style={[styles.recAdviceText, { color: colors.textMuted }]}>
               Speak clearly into your device microphone
             </Text>
           </View>
@@ -482,7 +484,7 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
         </View>
       ) : audioUri || initialAudioUri ? (
         /* STATE 2: RECORDED OR UPLOADED AUDIO ATTACHED */
-        <View style={styles.playerCard}>
+        <View style={[styles.playerCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
           <View style={styles.playerMainRow}>
             {/* Play / Pause Toggle Button */}
             <TouchableOpacity
@@ -502,11 +504,11 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
 
             <View style={styles.playerTrackCol}>
               <View style={styles.playerMetaRow}>
-                <Text style={styles.audioTitleText} numberOfLines={1}>
+                <Text style={[styles.audioTitleText, { color: colors.text }]} numberOfLines={1}>
                   {currentFileName ||
                     (audioSource === 'UPLOADED' ? 'uploaded_audio.m4a' : 'recorded_voice.m4a')}
                 </Text>
-                <Text style={styles.timeCounterText}>
+                <Text style={[styles.timeCounterText, { color: colors.textMuted }]}>
                   {formatTime(playbackSeconds)} / {formatTime(duration)}
                 </Text>
               </View>
@@ -524,7 +526,7 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
               </View>
 
               {/* Progress Bar Track */}
-              <View style={styles.progressBarTrack}>
+              <View style={[styles.progressBarTrack, { backgroundColor: colors.border }]}>
                 <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
               </View>
 
@@ -547,7 +549,7 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
           </View>
 
           {/* Redesigned Recording Controls: Stop, Speaker Output, Re-record, Delete */}
-          <View style={styles.controlsContainer}>
+          <View style={[styles.controlsContainer, { borderTopColor: colors.border }]}>
             {/* Row 1: Audio Playback Status & Speaker Output Routing */}
             <View style={styles.controlsStatusRow}>
               {/* Stop Playback Button (Touch-friendly, min 40dp height) */}
@@ -590,14 +592,14 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
             <View style={styles.actionsDualRow}>
               {/* Re-record Button */}
               <TouchableOpacity
-                style={styles.reRecordBtn}
+                style={[styles.reRecordBtn, isDark && { backgroundColor: 'rgba(56, 189, 248, 0.12)', borderColor: 'rgba(56, 189, 248, 0.35)' }]}
                 onPress={handleStartRealRecording}
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel="Re-record Voice Note"
               >
                 <Icon name="refresh" size={16} color="#2563EB" style={{ marginRight: 6 }} />
-                <Text style={styles.reRecordBtnText}>Re-record</Text>
+                <Text style={[styles.reRecordBtnText, isDark && { color: colors.primary }]}>Re-record</Text>
               </TouchableOpacity>
 
               {/* Delete Button */}
@@ -631,14 +633,14 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
           <Text style={styles.orDividerText}>or upload audio file</Text>
 
           <TouchableOpacity
-            style={styles.secondaryUploadButton}
+            style={[styles.secondaryUploadButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={handleUploadAudioFile}
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="Upload Audio File"
           >
             <Icon name="upload" size={18} color="#1E293B" style={{ marginRight: 8 }} />
-            <Text style={styles.secondaryUploadButtonText}>
+            <Text style={[styles.secondaryUploadButtonText, { color: colors.text }]}>
               Upload Audio (.mp3, .m4a)
             </Text>
           </TouchableOpacity>

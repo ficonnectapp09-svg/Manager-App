@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICAvatar } from '../../components/ui/FICAvatar';
 import { FICCard } from '../../components/ui/FICCard';
@@ -33,6 +34,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager, isLoading, logout, refreshManager, updateManager } = useAuth();
   const { t } = useLanguage();
 
@@ -120,7 +122,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   })();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title={t('header_profile', 'Profile')}
@@ -172,22 +174,22 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Manager ID</Text>
-              <Text style={styles.metaValue}>{employeeIdText}</Text>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Manager ID</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{employeeIdText}</Text>
             </View>
             <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Active Since</Text>
-              <Text style={styles.metaValue}>{activeSinceFormatted}</Text>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Active Since</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{activeSinceFormatted}</Text>
             </View>
           </View>
         </FICCard>
 
         {/* SECTION 2: ACCOUNT INFORMATION */}
-        <FICCard style={styles.sectionCard}>
+        <FICCard style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleLeft}>
               <Icon name="account-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitleText}>{t('section_account_info', 'Account Information')}</Text>
+              <Text style={[styles.sectionTitleText, { color: colors.text }]}>{t('section_account_info', 'Account Information')}</Text>
             </View>
             <TouchableOpacity
               onPress={() => {
@@ -201,77 +203,77 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_full_name', 'Full Name')}</Text>
-            <Text style={styles.infoValue}>{manager.name}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_full_name', 'Full Name')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.name}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_email', 'Official Email')}</Text>
-            <Text style={styles.infoValue}>{manager.email}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_email', 'Official Email')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.email}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_mobile', 'Registered Mobile')}</Text>
-            <Text style={styles.infoValue}>+91 {manager.mobile || manager.phone || '9876543200'}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_mobile', 'Registered Mobile')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>+91 {manager.mobile || manager.phone || '9876543200'}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_dob', 'Date of Birth')}</Text>
-            <Text style={styles.infoValue}>{manager.dob || 'Registered with KYC'}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_dob', 'Date of Birth')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.dob || 'Registered with KYC'}</Text>
           </View>
 
           <View style={[styles.infoRow, styles.noBorderRow]}>
-            <Text style={styles.infoLabel}>{t('field_gender', 'Gender')}</Text>
-            <Text style={styles.infoValue}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_gender', 'Gender')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>
               {manager.gender ? manager.gender.charAt(0).toUpperCase() + manager.gender.slice(1) : 'Registered'}
             </Text>
           </View>
         </FICCard>
 
         {/* SECTION 3: WORK & TERRITORY SCOPE */}
-        <FICCard style={styles.sectionCard}>
+        <FICCard style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleLeft}>
               <Icon name="map-marker-radius-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitleText}>{t('section_work_scope', 'Work & Territory Scope')}</Text>
+              <Text style={[styles.sectionTitleText, { color: colors.text }]}>{t('section_work_scope', 'Work & Territory Scope')}</Text>
             </View>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_role', 'Assigned Role')}</Text>
-            <Text style={styles.infoValue}>{roleFormatted}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_role', 'Assigned Role')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{roleFormatted}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_role_level', 'Role Level')}</Text>
-            <Text style={styles.infoValue}>Level {roleLevel} (Operational Hierarchy)</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_role_level', 'Role Level')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>Level {roleLevel} (Operational Hierarchy)</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Assigned State</Text>
-            <Text style={styles.infoValue}>{manager.state || manager.stateId || 'Tamil Nadu'}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Assigned State</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.state || manager.stateId || 'Tamil Nadu'}</Text>
           </View>
 
           {manager.districtId || manager.districts?.length ? (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Assigned District</Text>
-              <Text style={styles.infoValue}>{manager.districts?.[0] || manager.districtId || 'Chennai'}</Text>
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Assigned District</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{manager.districts?.[0] || manager.districtId || 'Chennai'}</Text>
             </View>
           ) : null}
 
           <View style={[styles.infoRow, styles.noBorderRow]}>
-            <Text style={styles.infoLabel}>{t('field_supervisor', 'Direct Supervisor')}</Text>
-            <Text style={styles.infoValue}>{supervisorText}</Text>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_supervisor', 'Direct Supervisor')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{supervisorText}</Text>
           </View>
         </FICCard>
 
         {/* SECTION 4: IDENTITY & KYC VERIFICATION */}
-        <FICCard style={styles.sectionCard}>
+        <FICCard style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleLeft}>
               <Icon name="card-account-details-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitleText}>{t('section_identity_kyc', 'Identity & Verification')}</Text>
+              <Text style={[styles.sectionTitleText, { color: colors.text }]}>{t('section_identity_kyc', 'Identity & Verification')}</Text>
             </View>
             <View style={styles.verifiedPill}>
               <Icon name="check-decagram" size={14} color="#059669" />
@@ -279,28 +281,28 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </View>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_aadhaar', 'Aadhaar Number')}</Text>
-            <Text style={[styles.infoValue, styles.monoText]}>{maskedAadhaar}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_aadhaar', 'Aadhaar Number')}</Text>
+            <Text style={[[styles.infoValue, styles.monoText], { color: colors.text }]}>{maskedAadhaar}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_pan', 'PAN Number')}</Text>
-            <Text style={[styles.infoValue, styles.monoText]}>{maskedPan}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_pan', 'PAN Number')}</Text>
+            <Text style={[[styles.infoValue, styles.monoText], { color: colors.text }]}>{maskedPan}</Text>
           </View>
 
           <View style={[styles.infoRow, styles.noBorderRow]}>
-            <Text style={styles.infoLabel}>{t('field_residential_address', 'Residential Address')}</Text>
-            <Text style={[styles.infoValue, styles.addressText]}>{formattedAddress}</Text>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_residential_address', 'Residential Address')}</Text>
+            <Text style={[[styles.infoValue, styles.addressText], { color: colors.text }]}>{formattedAddress}</Text>
           </View>
         </FICCard>
 
         {/* SECTION 5: BANK ACCOUNT DETAILS (Matching Website) */}
-        <FICCard style={styles.sectionCard}>
+        <FICCard style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleLeft}>
               <Icon name="bank" size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitleText}>{t('section_bank_details', 'Bank Details')}</Text>
+              <Text style={[styles.sectionTitleText, { color: colors.text }]}>{t('section_bank_details', 'Bank Details')}</Text>
             </View>
             <TouchableOpacity
               onPress={() => {
@@ -314,27 +316,27 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_account_holder', 'Account Holder')}</Text>
-            <Text style={styles.infoValue}>{bank.accountHolderName || manager.name}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_account_holder', 'Account Holder')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{bank.accountHolderName || manager.name}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_bank_name', 'Bank Name')}</Text>
-            <Text style={styles.infoValue}>{bank.bankName || 'State Bank of India'}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_bank_name', 'Bank Name')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{bank.bankName || 'State Bank of India'}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_branch', 'Branch & City')}</Text>
-            <Text style={styles.infoValue}>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_branch', 'Branch & City')}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>
               {[bank.branchName || 'Main Branch', bank.city || 'Chennai'].filter(Boolean).join(', ')}
             </Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('field_account_number', 'Account Number')}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_account_number', 'Account Number')}</Text>
             <View style={styles.accountNumberRow}>
-              <Text style={[styles.infoValue, styles.monoText]}>{maskedAccount}</Text>
+              <Text style={[[styles.infoValue, styles.monoText], { color: colors.text }]}>{maskedAccount}</Text>
               <TouchableOpacity
                 onPress={() => setShowAccountNumber(!showAccountNumber)}
                 style={styles.eyeBtn}
@@ -349,8 +351,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
 
           <View style={[styles.infoRow, styles.noBorderRow]}>
-            <Text style={styles.infoLabel}>{t('field_ifsc', 'IFSC Code')}</Text>
-            <Text style={[styles.infoValue, styles.monoText]}>{bank.ifscCode || 'SBIN0001234'}</Text>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{t('field_ifsc', 'IFSC Code')}</Text>
+            <Text style={[[styles.infoValue, styles.monoText], { color: colors.text }]}>{bank.ifscCode || 'SBIN0001234'}</Text>
           </View>
         </FICCard>
 
@@ -400,13 +402,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         onRequestClose={() => setIsLogoutModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surfaceElevated }]}>
             <View style={styles.modalIconCircle}>
               <Icon name="logout" size={26} color="#DC2626" />
             </View>
 
-            <Text style={styles.modalTitle}>{t('modal_logout_title', 'Logout Confirmation')}</Text>
-            <Text style={styles.modalMessage}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('modal_logout_title', 'Logout Confirmation')}</Text>
+            <Text style={[styles.modalMessage, { color: colors.textSecondary }]}>
               {t('modal_logout_msg', 'Are you sure you want to logout from FIC Manager?')}
             </Text>
 

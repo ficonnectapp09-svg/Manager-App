@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../../../theme';
+import { useTheme } from '../../../hooks/useTheme';
 
 export interface VendorSummaryProps {
   totalCount: number;
@@ -13,21 +14,22 @@ export const VendorSummaryBar: React.FC<VendorSummaryProps> = ({
   activeCount,
   inactiveCount,
 }) => {
+  const { colors, isDark } = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.statBox}>
-        <Text style={styles.statValue}>{totalCount}</Text>
-        <Text style={styles.statLabel}>Total Vendors</Text>
+        <Text style={[styles.statValue, { color: colors.primary }]}>{totalCount}</Text>
+        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Vendors</Text>
       </View>
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.divider }]} />
       <View style={styles.statBox}>
         <Text style={[styles.statValue, styles.activeValue]}>{activeCount}</Text>
-        <Text style={styles.statLabel}>Active</Text>
+        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active</Text>
       </View>
       <View style={styles.divider} />
       <View style={styles.statBox}>
-        <Text style={[styles.statValue, styles.inactiveValue]}>{inactiveCount}</Text>
-        <Text style={styles.statLabel}>Inactive</Text>
+        <Text style={[styles.statValue, styles.inactiveValue, { color: colors.textMuted }]}>{inactiveCount}</Text>
+        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Inactive</Text>
       </View>
     </View>
   );

@@ -4,6 +4,54 @@ import { apiClient } from '../../api/ApiClient';
 import { services } from '../../index';
 
 export class HttpManagerRepository implements IManagerRepository {
+  private normalizeManager(raw: any): Manager {
+    const rawRole = String(raw.role || raw.managerType || '').toUpperCase().trim();
+    let role = ManagerRole.DIVISION_MANAGER;
+    if (rawRole.includes('STATE')) {
+      role = ManagerRole.STATE_MANAGER;
+    } else if (rawRole.includes('DISTRICT')) {
+      role = ManagerRole.DISTRICT_MANAGER;
+    } else if (rawRole.includes('PINCODE') || rawRole.includes('PIN')) {
+      role = ManagerRole.PINCODE_MANAGER;
+    } else if (rawRole.includes('DIVISION')) {
+      role = ManagerRole.DIVISION_MANAGER;
+    }
+
+    const stateName = raw.stateName || raw.state || raw.assignedState || 'Tamil Nadu';
+    const districtName = raw.districtName || raw.district || raw.assignedDistrict || '';
+    const divisionName = raw.divisionName || raw.division || raw.assignedDivision || '';
+    const pincode = raw.pincodeCode || raw.pincode || raw.assignedPincode || '';
+    const area = raw.pincodeArea || raw.area || '';
+
+    const territoryParts = [area || pincode, divisionName, districtName, stateName].filter(Boolean);
+    const territoryName = territoryParts.length > 0 ? territoryParts.join(' • ') : stateName;
+
+    return {
+      id: String(raw.id || raw._id || raw.managerId || ''),
+      name: String(raw.name || 'Manager'),
+      email: String(raw.email || ''),
+      phone: String(raw.mobile || raw.phone || ''),
+      mobile: String(raw.mobile || raw.phone || ''),
+      role,
+      level: raw.level || (role === ManagerRole.STATE_MANAGER ? 1 : role === ManagerRole.DISTRICT_MANAGER ? 2 : role === ManagerRole.DIVISION_MANAGER ? 3 : 4),
+      stateId: raw.stateId || stateName,
+      state: stateName,
+      districtId: raw.districtId || districtName,
+      districts: districtName ? [districtName] : [],
+      divisionId: raw.divisionId || divisionName,
+      division: divisionName,
+      pincodeId: raw.pincodeId || pincode,
+      pincode,
+      profileImage: raw.avatarUrl || raw.profilePhoto || '',
+      avatarUrl: raw.avatarUrl || raw.profilePhoto || '',
+      employeeId: raw.managerId || raw.employeeId || 'MGR-000',
+      territoryName,
+      status: String(raw.status || 'active').toLowerCase() === 'active' ? 'ACTIVE' : 'INACTIVE',
+      createdAt: raw.createdAt || new Date().toISOString(),
+      updatedAt: raw.updatedAt || new Date().toISOString(),
+    };
+  }
+
   private async getToken(): Promise<string | null> {
     return services.storageService.getAuthToken();
   }
@@ -18,9 +66,30 @@ export class HttpManagerRepository implements IManagerRepository {
     if (query) params.search = query;
     if (statusFilter !== 'ALL') params.status = statusFilter;
 
-    const response = await apiClient.get<Manager[]>('/managers', { token, params });
-    const list = Array.isArray(response.data) ? response.data : (Array.isArray((response as any).managers) ? (response as any).managers : []);
-    return list;
+    const response = await apiClient.get<any>('/managers', { token, params });
+    let list: any[] = [];
+    if (Array.isArray(response.data)) {
+      list = response.data;
+    } else if (response.data && Array.isArray(response.data.data)) {
+      list = response.data.data;
+    } else if (response.data && Array.isArray(response.data.all)) {
+      list = response.data.all;
+    } else if (Array.isArray((response as any).managers)) {
+      list = (response as any).managers;
+    } else if (Array.isArray((response as any).subordinates)) {
+      list = (response as any).subordinates;
+    }
+
+    // Only allow authentic manager roles (exclude deleted, agents, vendors, sub-admins)
+    const validManagers = list.filter((m: any) => {
+      const r = String(m.role || '').toLowerCase();
+      if (r.includes('admin') || r.includes('vendor') || (r.includes('agent') && !r.includes('manager'))) {
+        return false;
+      }
+      return r.includes('manager');
+    });
+
+    return validManagers.map((m: any) => this.normalizeManager(m));
   }
 
   async getManagerById(id: string): Promise<Manager | null> {

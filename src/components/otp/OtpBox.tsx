@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, Animated, Platform } from 'react-native';
 import { OTP_CONFIG } from './otpConfig';
 import { OtpPhase } from './types';
+import { useTheme } from '../../hooks/useTheme';
 
 interface OtpBoxProps {
   index: number;
@@ -37,6 +38,7 @@ export const OtpBox: React.FC<OtpBoxProps> = React.memo(
     const digitScale = useRef(new Animated.Value(digit ? 1 : 0.7)).current;
     const digitOpacity = useRef(new Animated.Value(digit ? 1 : 0)).current;
     const prevDigit = useRef(digit);
+    const { colors, isDark } = useTheme();
 
     // Caret blink animation when box is active and empty
     useEffect(() => {
@@ -135,15 +137,38 @@ export const OtpBox: React.FC<OtpBoxProps> = React.memo(
         <View
           style={[
             styles.box,
-            isActive && styles.boxActive,
-            Boolean(digit) && styles.boxFilled,
-            isError && styles.boxError,
+            {
+              backgroundColor: isDark ? colors.surfaceElevated : '#F8FAFC',
+              borderColor: isDark ? colors.border : '#CBD5E1',
+            },
+            isActive && [
+              styles.boxActive,
+              {
+                borderColor: isDark ? colors.primary : '#1D4ED8',
+                backgroundColor: isDark ? colors.primary + '22' : '#EFF6FF',
+              },
+            ],
+            Boolean(digit) && [
+              styles.boxFilled,
+              {
+                borderColor: isDark ? colors.borderHighlight : '#94A3B8',
+                backgroundColor: isDark ? colors.surface : '#FFFFFF',
+              },
+            ],
+            isError && [
+              styles.boxError,
+              {
+                borderColor: isDark ? colors.error : '#DC2626',
+                backgroundColor: isDark ? colors.error + '22' : '#FEF2F2',
+              },
+            ],
           ]}
         >
           {digit ? (
             <Animated.Text
               style={[
                 styles.digitText,
+                { color: isDark ? colors.text : '#0F172A' },
                 isError && styles.digitTextError,
                 {
                   opacity: digitOpacity,
@@ -157,7 +182,7 @@ export const OtpBox: React.FC<OtpBoxProps> = React.memo(
             <Animated.View
               style={[
                 styles.caret,
-                { opacity: caretAnim },
+                { backgroundColor: isDark ? colors.primary : '#1D4ED8', opacity: caretAnim },
               ]}
             />
           ) : null}

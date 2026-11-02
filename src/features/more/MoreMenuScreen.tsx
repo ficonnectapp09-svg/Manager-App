@@ -11,6 +11,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../hooks/useAuth';
 
 export interface MoreMenuScreenProps {
@@ -22,6 +23,7 @@ export const MoreMenuScreen: React.FC<MoreMenuScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
 
   const menuItems = [
@@ -73,7 +75,7 @@ export const MoreMenuScreen: React.FC<MoreMenuScreenProps> = ({
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       <FICHeader
@@ -84,18 +86,18 @@ export const MoreMenuScreen: React.FC<MoreMenuScreenProps> = ({
       />
 
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Manager Summary Pill */}
         <TouchableOpacity
-          style={styles.managerHeaderCard}
+          style={[styles.managerHeaderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.8}
           onPress={() => onNavigateRoute && onNavigateRoute('Profile')}
         >
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>
+          <View style={[styles.avatarCircle, { backgroundColor: isDark ? colors.surfaceElevated : '#EFF6FF' }]}>
+            <Text style={[styles.avatarText, { color: colors.primary }]}>
               {(manager?.name || 'M')
                 .split(' ')
                 .map(n => n[0])
@@ -105,8 +107,8 @@ export const MoreMenuScreen: React.FC<MoreMenuScreenProps> = ({
             </Text>
           </View>
           <View style={styles.managerMetaCol}>
-            <Text style={styles.managerNameText}>{manager?.name || 'Manager'}</Text>
-            <Text style={styles.managerRoleText}>
+            <Text style={[styles.managerNameText, { color: colors.text }]}>{manager?.name || 'Manager'}</Text>
+            <Text style={[styles.managerRoleText, { color: colors.textMuted }]}>
               {String(manager?.role || 'FIELD_MANAGER').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} • {manager?.territoryName || 'Tamil Nadu'}
             </Text>
           </View>
@@ -115,9 +117,9 @@ export const MoreMenuScreen: React.FC<MoreMenuScreenProps> = ({
 
         {/* Modules List */}
         <View style={styles.menuSection}>
-          <Text style={styles.sectionHeader}>Operational Tools</Text>
+          <Text style={[styles.sectionHeader, { color: colors.textMuted }]}>Operational Tools</Text>
 
-          <View style={styles.menuCard}>
+          <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {menuItems.map((item, index) => {
               const isLast = index === menuItems.length - 1;
               return (
@@ -134,8 +136,8 @@ export const MoreMenuScreen: React.FC<MoreMenuScreenProps> = ({
                   </View>
 
                   <View style={styles.menuTextCol}>
-                    <Text style={styles.menuItemTitle}>{item.title}</Text>
-                    <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+                    <Text style={[styles.menuItemTitle, { color: colors.text }]}>{item.title}</Text>
+                    <Text style={[styles.menuItemSubtitle, { color: colors.textMuted }]}>{item.subtitle}</Text>
                   </View>
 
                   <Icon name="chevron-right" size={20} color="#CBD5E1" />
@@ -147,7 +149,7 @@ export const MoreMenuScreen: React.FC<MoreMenuScreenProps> = ({
 
         {/* System Version Info */}
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>FIC Operational System • v1.0.0</Text>
+          <Text style={[styles.versionText, { color: colors.textMuted }]}>FIC Operational System • v1.0.0</Text>
           <Text style={styles.versionSubtext}>Forge India Connect Territory Operations</Text>
         </View>
       </ScrollView>

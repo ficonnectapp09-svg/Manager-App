@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Priority } from '../../types';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface FICPriorityBadgeProps {
   priority: Priority;
@@ -9,28 +10,30 @@ export interface FICPriorityBadgeProps {
 }
 
 export const FICPriorityBadge: React.FC<FICPriorityBadgeProps> = ({ priority, style }) => {
+  const { colors } = useTheme();
+
   const getBadgeConfig = () => {
     switch (priority) {
       case Priority.HIGH:
         return {
           label: 'HIGH PRIORITY',
-          bg: theme.colors.priority.highBg,
-          text: theme.colors.priority.high,
+          bg: colors.priority.highBg,
+          text: colors.priority.high,
           indicatorSymbol: '▲',
         };
       case Priority.MEDIUM:
         return {
           label: 'MEDIUM PRIORITY',
-          bg: theme.colors.priority.mediumBg,
-          text: theme.colors.priority.medium,
+          bg: colors.priority.mediumBg,
+          text: colors.priority.medium,
           indicatorSymbol: '■',
         };
       case Priority.LOW:
       default:
         return {
           label: 'LOW PRIORITY',
-          bg: theme.colors.priority.lowBg,
-          text: theme.colors.priority.low,
+          bg: colors.priority.lowBg,
+          text: colors.priority.low,
           indicatorSymbol: '▼',
         };
     }

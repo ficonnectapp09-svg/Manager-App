@@ -204,11 +204,16 @@ export class ApiClient {
     return this.uploadMultipartWithProgress<T>(endpoint, formData, { token });
   }
 
+  async putMultipart<T>(endpoint: string, formData: FormData, token?: string): Promise<ApiResponseEnvelope<T>> {
+    return this.uploadMultipartWithProgress<T>(endpoint, formData, { token, method: 'PUT' });
+  }
+
   async uploadMultipartWithProgress<T>(
     endpoint: string,
     formData: FormData,
     options: {
       token?: string;
+      method?: 'POST' | 'PUT';
       onProgress?: (percentage: number) => void;
     } = {}
   ): Promise<ApiResponseEnvelope<T>> {
@@ -226,7 +231,7 @@ export class ApiClient {
             });
           }
           const xhr = new XMLHttpRequest();
-          xhr.open('POST', targetUrl, true);
+          xhr.open(options.method || 'POST', targetUrl, true);
           xhr.timeout = 45000;
           xhr.setRequestHeader('Accept', 'application/json');
 

@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import { services } from '../../services';
+import { useTheme } from '../../hooks/useTheme';
 import { Issue, IssueStatus } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICCard } from '../../components/ui/FICCard';
@@ -34,6 +35,7 @@ export const IssueDetailScreen: React.FC<IssueDetailScreenProps> = ({
   onBack,
   onOpenDrawer,
 }) => {
+  const { colors, isDark } = useTheme();
   const [issue, setIssue] = useState<Issue | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
@@ -120,7 +122,7 @@ export const IssueDetailScreen: React.FC<IssueDetailScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Issue Details"
@@ -133,7 +135,7 @@ export const IssueDetailScreen: React.FC<IssueDetailScreenProps> = ({
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Header Title Card */}
         <FICCard style={styles.card}>
-          <Text style={styles.title}>{issue.title}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{issue.title}</Text>
           <View style={styles.badgeRow}>
             <FICPriorityBadge priority={issue.priority} />
             <FICStatusBadge status={issue.status} showIcon={true} />
@@ -202,7 +204,7 @@ export const IssueDetailScreen: React.FC<IssueDetailScreenProps> = ({
         {/* Description Section */}
         <FICCard style={styles.card}>
           <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.descriptionText}>{issue.description}</Text>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{issue.description}</Text>
         </FICCard>
 
         {/* Resolution Text Card (If Resolved) */}

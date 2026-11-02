@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../hooks/useAuth';
 import { ASSETS } from '../../assets/logo';
 import { services } from '../../services';
@@ -37,6 +38,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   onRegister,
   onOtpLogin,
 }) => {
+  const { colors, isDark } = useTheme();
   const { login, loginWithManager, sendOtp, verifyOtp, isLoading, authError, clearAuthError } = useAuth();
 
   // Mode: 'EMAIL' | 'OTP_PHONE' | 'OTP_VERIFY'
@@ -225,7 +227,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const skylineHeight = Math.min(170, SCREEN_WIDTH * (350 / 841));
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       {/* ── Interactive Native-Style Push Notification Banner ── */}
@@ -276,19 +278,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
           {/* ── Top Header: Soft Cream Accent + Tagline ── */}
           <View style={styles.topSection}>
-            <View style={styles.accentCircle} />
+            <View style={[styles.accentCircle, { backgroundColor: isDark ? 'rgba(242, 169, 0, 0.08)' : '#FEF4D8' }]} />
 
             <View style={styles.taglineContainer}>
-              <Text style={styles.taglineLight}>Empowering</Text>
+              <Text style={[styles.taglineLight, { color: isDark ? colors.textMuted : '#64748B' }]}>Empowering</Text>
               <Text style={styles.taglineLight}>Local Businesses</Text>
-              <Text style={styles.taglineBold}>A Stronger Tomorrow</Text>
+              <Text style={[styles.taglineBold, { color: isDark ? colors.textSecondary : '#475569' }]}>A Stronger Tomorrow</Text>
               <View style={styles.taglineUnderline} />
             </View>
           </View>
@@ -305,15 +307,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
           {/* ── Heading / Welcome Text ── */}
           <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeTitle}>Let's Connect!</Text>
-            <Text style={styles.welcomeSubtitle}>Manage. Grow. Make an Impact.</Text>
+            <Text style={[styles.welcomeTitle, { color: colors.text }]}>Let's Connect!</Text>
+            <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>Manage. Grow. Make an Impact.</Text>
           </View>
 
           {/* ── Mode Selection Tabs (Email Login / Mobile OTP) ── */}
           {otpStep !== 'VERIFY' && (
-            <View style={styles.tabContainer}>
+            <View style={[styles.tabContainer, { backgroundColor: isDark ? colors.surfaceElevated : '#F1F5F9' }]}>
               <TouchableOpacity
-                style={[styles.tabButton, activeTab === 'EMAIL' && styles.tabButtonActive]}
+                style={[styles.tabButton, activeTab === 'EMAIL' && [styles.tabButtonActive, { backgroundColor: isDark ? colors.surface : '#FFFFFF' }]]}
                 onPress={() => {
                   setActiveTab('EMAIL');
                   if (authError) clearAuthError();
@@ -329,7 +331,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <Text
                   style={[
                     styles.tabButtonText,
-                    activeTab === 'EMAIL' && styles.tabButtonTextActive,
+                    activeTab === 'EMAIL' && [styles.tabButtonTextActive, { color: isDark ? colors.primary : '#0B4A8B' }],
                   ]}
                 >
                   Email Login
@@ -337,7 +339,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.tabButton, activeTab === 'OTP' && styles.tabButtonActive]}
+                style={[styles.tabButton, activeTab === 'OTP' && [styles.tabButtonActive, { backgroundColor: isDark ? colors.surface : '#FFFFFF' }]]}
                 onPress={() => {
                   setActiveTab('OTP');
                   setOtpStep('PHONE');
@@ -354,7 +356,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <Text
                   style={[
                     styles.tabButtonText,
-                    activeTab === 'OTP' && styles.tabButtonTextActive,
+                    activeTab === 'OTP' && [styles.tabButtonTextActive, { color: isDark ? colors.primary : '#0B4A8B' }],
                   ]}
                 >
                   Mobile OTP
@@ -380,11 +382,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <>
                 {/* Email / Manager ID Input */}
                 <View
-                  style={[
+                  style={[[
                     styles.inputContainer,
                     focusedField === 'email' && styles.inputFocused,
                     usernameError ? styles.inputError : null,
-                  ]}
+                  ], { backgroundColor: isDark ? colors.surface : '#F1F4F8', borderColor: isDark ? colors.border : '#E2E8F0' }]}
                 >
                   <Icon
                     name="email-outline"
@@ -393,9 +395,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={styles.inputField}
+                    style={[styles.inputField, { color: colors.text }]}
                     placeholder="Email / Manager ID"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={colors.textMuted}
                     value={username}
                     onChangeText={(text) => {
                       setUsername(text);
@@ -417,11 +419,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
                 {/* Password Input */}
                 <View
-                  style={[
+                  style={[[
                     styles.inputContainer,
                     focusedField === 'password' && styles.inputFocused,
                     passwordError ? styles.inputError : null,
-                  ]}
+                  ], { backgroundColor: isDark ? colors.surface : '#F1F4F8', borderColor: isDark ? colors.border : '#E2E8F0' }]}
                 >
                   <Icon
                     name="lock-outline"
@@ -430,9 +432,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={styles.inputField}
+                    style={[styles.inputField, { color: colors.text }]}
                     placeholder="Password"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={colors.textMuted}
                     value={password}
                     onChangeText={(text) => {
                       setPassword(text);
@@ -470,19 +472,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   accessibilityRole="button"
                   accessibilityLabel="Forgot Password"
                 >
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                  <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>Forgot Password?</Text>
                 </TouchableOpacity>
 
                 {/* Login Button */}
                 <TouchableOpacity
-                  style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                  style={[styles.loginButton, { backgroundColor: isDark ? colors.primary : '#0B4A8B' }, isLoading && styles.loginButtonDisabled]}
                   onPress={handleEmailLogin}
                   disabled={isLoading}
                   activeOpacity={0.85}
                   accessibilityRole="button"
                   accessibilityLabel="Login"
                 >
-                  <Text style={styles.loginButtonText}>
+                  <Text style={[styles.loginButtonText, isDark && { color: '#0B1220' }]}>
                     {isLoading ? 'Authenticating...' : 'Login'}
                   </Text>
                   {!isLoading && (
@@ -493,7 +495,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 {/* Registration Card */}
                 {onRegister && (
                   <TouchableOpacity
-                    style={styles.registerCard}
+                    style={[styles.registerCard, { backgroundColor: isDark ? colors.surface : '#EFF6FF', borderColor: isDark ? colors.border : '#BFDBFE' }]}
                     activeOpacity={0.8}
                     onPress={onRegister}
                   >
@@ -502,8 +504,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         <Icon name="account-plus-outline" size={22} color="#1D4ED8" />
                       </View>
                       <View style={styles.registerCardText}>
-                        <Text style={styles.registerCardTitle}>New Territory Manager?</Text>
-                        <Text style={styles.registerCardSubtitle}>Register your account here</Text>
+                        <Text style={[styles.registerCardTitle, { color: colors.primary }]}>New Territory Manager?</Text>
+                        <Text style={[styles.registerCardSubtitle, { color: colors.textMuted }]}>Register your account here</Text>
                       </View>
                     </View>
                     <Icon name="chevron-right" size={20} color="#1D4ED8" />
@@ -517,27 +519,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             {/* ═══════════════════════════════════════════════════════════ */}
             {activeTab === 'OTP' && otpStep === 'PHONE' && (
               <View style={styles.otpPhoneSection}>
-                <Text style={styles.otpPromptTitle}>Enter Registered Mobile Number</Text>
-                <Text style={styles.otpPromptSubtitle}>
+                <Text style={[styles.otpPromptTitle, { color: colors.text }]}>Enter Registered Mobile Number</Text>
+                <Text style={[styles.otpPromptSubtitle, { color: colors.textSecondary }]}>
                   We will check local registration and send a 4-digit verification code to your device.
                 </Text>
 
                 {/* Phone Input with +91 Prefix */}
                 <View
-                  style={[
+                  style={[[
                     styles.inputContainer,
                     focusedField === 'phone' && styles.inputFocused,
                     phoneError ? styles.inputError : null,
-                  ]}
+                  ], { backgroundColor: isDark ? colors.surface : '#F1F4F8', borderColor: isDark ? colors.border : '#E2E8F0' }]}
                 >
-                  <View style={styles.countryCodeBadge}>
+                  <View style={[styles.countryCodeBadge, { borderRightColor: colors.border }]}>
                     <Text style={styles.countryCodeFlag}>🇮🇳</Text>
-                    <Text style={styles.countryCodeText}>+91</Text>
+                    <Text style={[styles.countryCodeText, { color: colors.text }]}>+91</Text>
                   </View>
                   <TextInput
-                    style={styles.inputField}
+                    style={[styles.inputField, { color: colors.text }]}
                     placeholder="10-digit mobile number"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={colors.textMuted}
                     value={phone}
                     onChangeText={(text) => {
                       setPhone(text.replace(/[^0-9]/g, '').slice(0, 10));
@@ -584,7 +586,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   activeOpacity={0.7}
                 >
                   <Icon name="arrow-left" size={16} color="#64748B" style={{ marginRight: 4 }} />
-                  <Text style={styles.backToEmailText}>Back to Email Login</Text>
+                  <Text style={[styles.backToEmailText, { color: isDark ? colors.textMuted : '#64748B' }]}>Back to Email Login</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -596,14 +598,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <View style={styles.otpVerifyContainer}>
                 {/* Manager Greeting Card */}
                 {matchedManager ? (
-                  <View style={styles.managerInfoCard}>
+                  <View style={[styles.managerInfoCard, { backgroundColor: isDark ? colors.surfaceElevated : '#EFF6FF', borderColor: isDark ? colors.border : '#BFDBFE' }]}>
                     <View style={styles.managerAvatarBox}>
                       <Icon name="account-tie" size={24} color="#0B4A8B" />
                     </View>
                     <View style={styles.managerInfoText}>
                       <Text style={styles.managerWelcome}>Logging in as</Text>
-                      <Text style={styles.managerName}>{matchedManager.name}</Text>
-                      <Text style={styles.managerRole}>
+                      <Text style={[styles.managerName, { color: colors.text }]}>{matchedManager.name}</Text>
+                      <Text style={[styles.managerRole, { color: colors.textMuted }]}>
                         {matchedManager.role.replace(/_/g, ' ')} • {matchedManager.territoryName}
                       </Text>
                     </View>
@@ -626,12 +628,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 {/* Instant Quick Auto-Fill OTP Button */}
                 {generatedOtp ? (
                   <TouchableOpacity
-                    style={styles.autoFillOtpBtn}
+                    style={[styles.autoFillOtpBtn, { backgroundColor: isDark ? colors.surface : '#EBF3FB', borderColor: colors.primary }]}
                     onPress={() => handleAutoFillOtp(generatedOtp)}
                     activeOpacity={0.8}
                   >
                     <Icon name="lightning-bolt" size={18} color="#0B4A8B" style={{ marginRight: 6 }} />
-                    <Text style={styles.autoFillOtpBtnText}>
+                    <Text style={[styles.autoFillOtpBtnText, { color: colors.primary }]}>
                       Quick Auto-Fill ({generatedOtp})
                     </Text>
                   </TouchableOpacity>
@@ -658,7 +660,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     activeOpacity={0.7}
                   >
                     <Icon name="phone-edit-outline" size={15} color="#64748B" style={{ marginRight: 4 }} />
-                    <Text style={styles.changeNumberText}>Change Number</Text>
+                    <Text style={[styles.changeNumberText, { color: isDark ? colors.textMuted : '#64748B' }]}>Change Number</Text>
                   </TouchableOpacity>
                 </View>
               </View>

@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { FieldAgent, ManagerRole } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
@@ -37,9 +38,11 @@ type AgentScopeFilter = 'ALL' | 'MY' | 'EQUAL' | 'SUBORDINATE';
 type AgentTierFilter = 'ALL' | ManagerRole;
 
 export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
+  onBack,
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager: authManager } = useAuth();
   const [agents, setAgents] = useState<FieldAgent[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -395,7 +398,7 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
   const territoryScopeText = authManager?.territoryName || 'Tamil Nadu (Whole State)';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       {/* Header */}
@@ -562,12 +565,12 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
 
             {/* Search Input Bar + Filter Trigger Button */}
             <View style={styles.searchRow}>
-              <View style={styles.searchInputContainer}>
+              <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Icon name="magnify" size={20} color="#94A3B8" style={styles.searchIcon} />
                 <TextInput
-                  style={styles.searchInput}
+                  style={[styles.searchInput, { color: colors.text }]}
                   placeholder="Search agents by name, ID, phone..."
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
@@ -618,14 +621,14 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
             >
               <TouchableOpacity
                 style={[
-                  styles.tierQuickPill,
+                  styles.tierQuickPill, { backgroundColor: colors.surface, borderColor: colors.border },
                   activeTier === 'ALL' && styles.tierQuickPillActive,
                 ]}
                 onPress={() => setActiveTier('ALL')}
               >
                 <Text
                   style={[
-                    styles.tierQuickPillText,
+                    styles.tierQuickPillText, { color: colors.textSecondary },
                     activeTier === 'ALL' && styles.tierQuickPillTextActive,
                   ]}
                 >
@@ -714,7 +717,7 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
                 <FICAvatar name={item.name} size={44} />
                 <View style={styles.cardMainContent}>
                   <View style={styles.nameRow}>
-                    <Text style={styles.agentName} numberOfLines={1}>
+                    <Text style={[styles.agentName, { color: colors.text }]} numberOfLines={1}>
                       {item.name}
                     </Text>
                   </View>
@@ -723,7 +726,7 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
                     👤 Assigned to: {item.assignedManager || 'Field Operations'}
                   </Text>
 
-                  <Text style={styles.territoryText}>
+                  <Text style={[styles.territoryText, { color: colors.textMuted }]}>
                     📍 Pincode: {item.assignedPincode} • ID: {item.id}
                   </Text>
                 </View>
@@ -756,42 +759,42 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
               </View>
 
               {/* 3 Metrics Box */}
-              <View style={styles.metricsBox}>
+              <View style={[styles.metricsBox, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
                 <View style={styles.metricCol}>
-                  <Text style={styles.metricVal}>4</Text>
-                  <Text style={styles.metricLabel}>Tasks Assigned</Text>
+                  <Text style={[styles.metricVal, { color: colors.text }]}>4</Text>
+                  <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Tasks Assigned</Text>
                 </View>
                 <View style={styles.metricDivider} />
                 <View style={styles.metricCol}>
-                  <Text style={styles.metricVal}>12</Text>
-                  <Text style={styles.metricLabel}>Reports Filed</Text>
+                  <Text style={[styles.metricVal, { color: colors.text }]}>12</Text>
+                  <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Reports Filed</Text>
                 </View>
                 <View style={styles.metricDivider} />
                 <View style={styles.metricCol}>
                   <Text style={[styles.metricVal, { color: '#16A34A' }]}>100%</Text>
-                  <Text style={styles.metricLabel}>Verification</Text>
+                  <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Verification</Text>
                 </View>
               </View>
 
-              {/* Action Buttons Row */}
+              {/* Clean Jurisdiction Area Text Box (Module 5: No Google Maps Redirection) */}
+              <View style={[styles.jurisdictionBox, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+                <View style={styles.jurisdictionHeaderRow}>
+                  <Icon name="map-marker-radius-outline" size={14} color="#0284C7" />
+                  <Text style={[styles.jurisdictionLabel, { color: colors.primary }]}>Assigned Jurisdiction</Text>
+                </View>
+                <Text style={[styles.jurisdictionValue, { color: colors.text }]}>
+                  {`State: ${item.stateId || 'Tamil Nadu'} • District: ${item.districtId || 'Chennai'} • Division: ${item.divisionId || 'Central'} • Pincode: ${item.assignedPincode || '600001'}`}
+                </Text>
+              </View>
+
+              {/* Action Buttons Row (Call Agent preserved) */}
               <View style={styles.cardActionsRow}>
                 <TouchableOpacity
-                  style={styles.callBtn}
+                  style={[styles.callBtn, { flex: 1 }]}
                   onPress={() => handleCallAgent(item)}
                 >
                   <Icon name="phone" size={15} color="#0284C7" />
-                  <Text style={styles.callBtnText}>Call Agent</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.locateBtn}
-                  onPress={() => {
-                    const encodedPin = encodeURIComponent(`Pincode ${item.assignedPincode}, Tamil Nadu`);
-                    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodedPin}`);
-                  }}
-                >
-                  <Icon name="map-marker-radius-outline" size={15} color={theme.colors.primary} />
-                  <Text style={styles.locateBtnText}>Jurisdiction Area</Text>
+                  <Text style={[styles.callBtnText, isDark && { color: colors.primary }]}>Call Agent ({item.phone || 'Contact'})</Text>
                 </TouchableOpacity>
               </View>
             </FICCard>
@@ -817,11 +820,11 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
         onRequestClose={() => setIsFilterModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.filterModalCard}>
+          <View style={[styles.filterModalCard, { backgroundColor: colors.surfaceElevated }]}>
             {/* Modal Header */}
             <View style={styles.modalHeaderRow}>
               <View style={{ flex: 1, paddingRight: 10 }}>
-                <Text style={styles.modalTitle}>Hierarchy Filter Options</Text>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Hierarchy Filter Options</Text>
                 <Text style={styles.modalSubtitle}>
                   State Portal ({territoryScopeText}) • Select from Dropdowns
                 </Text>
@@ -838,7 +841,7 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
             <View style={styles.modalFormField}>
               <View style={styles.fieldLabelRow}>
                 <Icon name="map" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.fieldLabel}>State (Fixed Jurisdiction)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>State (Fixed Jurisdiction)</Text>
                 <View style={styles.fixedBadge}>
                   <Icon name="lock" size={11} color="#64748B" />
                   <Text style={styles.fixedBadgeText}>Fixed</Text>
@@ -854,7 +857,7 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
             <View style={styles.modalFormField}>
               <View style={styles.fieldLabelRow}>
                 <Icon name="bank" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {isDistrictFixed ? 'District (Fixed Jurisdiction)' : 'Select District (State Level)'}
                 </Text>
                 {isDistrictFixed && (
@@ -891,7 +894,7 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
             <View style={styles.modalFormField}>
               <View style={styles.fieldLabelRow}>
                 <Icon name="layers-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {isDivisionFixed ? 'Division (Fixed Jurisdiction)' : 'Select Division (Within District)'}
                 </Text>
                 {isDivisionFixed && (
@@ -928,7 +931,7 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
             <View style={styles.modalFormField}>
               <View style={styles.fieldLabelRow}>
                 <Icon name="map-marker-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {isPincodeFixed ? 'Pincode (Fixed Jurisdiction)' : 'Enter Pincode (Type to Search Locality)'}
                 </Text>
                 {isPincodeFixed && (
@@ -965,8 +968,8 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
 
             {/* Modal Actions */}
             <View style={styles.modalActionButtonsRow}>
-              <TouchableOpacity style={styles.modalResetBtn} onPress={handleResetFilters}>
-                <Text style={styles.modalResetBtnText}>Reset All</Text>
+              <TouchableOpacity style={[styles.modalResetBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handleResetFilters}>
+                <Text style={[styles.modalResetBtnText, { color: colors.text }]}>Reset All</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalApplyBtn} onPress={handleApplyFilters}>
                 <Text style={styles.modalApplyBtnText}>Apply Filters</Text>
@@ -1469,6 +1472,31 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  jurisdictionBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  jurisdictionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  jurisdictionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284C7',
+  },
+  jurisdictionValue: {
+    fontSize: 12,
+    color: '#334155',
+    lineHeight: 16,
   },
   modalApplyBtnText: {
     fontSize: 14,

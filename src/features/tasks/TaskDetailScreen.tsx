@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { FICImageUploadModal } from '../../components/ui/FICImageUploadModal';
 import { FICAudioPlayerRecorder } from '../../components/ui/FICAudioPlayerRecorder';
 import { services } from '../../services';
@@ -45,6 +46,7 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -419,7 +421,7 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
   const isBlocked = task.status === TaskStatus.BLOCKED;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Task Details"
@@ -463,49 +465,49 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
               <Text style={styles.stepBadgeText}>STEP 1</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.stepCardTitle}>Territory Jurisdiction & Authority</Text>
-              <Text style={styles.stepCardSub}>Operational jurisdiction & assigning Sub Admin</Text>
+              <Text style={[styles.stepCardTitle, { color: colors.text }]}>Territory Jurisdiction & Authority</Text>
+              <Text style={[styles.stepCardSub, { color: colors.textMuted }]}>Operational jurisdiction & assigning Sub Admin</Text>
             </View>
           </View>
 
           <View style={styles.metaList}>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Assigned State:</Text>
-              <Text style={styles.metaValueBold}>{task.stateId || manager?.state || 'Tamil Nadu'}</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Assigned State:</Text>
+              <Text style={[styles.metaValueBold, { color: colors.primary }]}>{task.stateId || manager?.state || 'Tamil Nadu'}</Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>District Jurisdiction:</Text>
-              <Text style={styles.metaValue}>{task.districtId || manager?.districtId || manager?.scope?.districtName || 'Chennai'}</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>District Jurisdiction:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{task.districtId || manager?.districtId || manager?.scope?.districtName || 'Chennai'}</Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Division Scope:</Text>
-              <Text style={styles.metaValue}>{task.divisionId || manager?.divisionId || manager?.scope?.divisionName || task.territory || 'Chennai Central'}</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Division Scope:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{task.divisionId || manager?.divisionId || manager?.scope?.divisionName || task.territory || 'Chennai Central'}</Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Pincode Jurisdiction:</Text>
-              <Text style={styles.metaValue}>{task.pincodeId || manager?.pincodeId || manager?.scope?.pincodeCode || '600001'}</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Pincode Jurisdiction:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{task.pincodeId || manager?.pincodeId || manager?.scope?.pincodeCode || '600001'}</Text>
             </View>
 
             <View style={[styles.metaRow, { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#E2E8F0' }]}>
-              <Text style={styles.metaLabel}>Assigning Sub Admin:</Text>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Assigning Sub Admin:</Text>
               <Text style={[styles.metaValueBold, { color: '#4338CA' }]}>
                 {task.createdByAdminName || task.assignedBy || manager?.assignedSubAdminName || 'Mad'}
               </Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Authority Role:</Text>
-              <Text style={styles.metaValue}>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Authority Role:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>
                 {task.createdByAdminRole || manager?.assignedSubAdminRole || 'State Operations Sub Admin'}
               </Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Assigned Date:</Text>
-              <Text style={styles.metaValue}>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Assigned Date:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>
                 {new Date(task.assignedDate || task.createdAt).toLocaleString()}
               </Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>SLA Deadline:</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>SLA Deadline:</Text>
               <Text style={[styles.metaValue, { color: isHighPriority ? '#DC2626' : '#D97706', fontWeight: '700' }]}>
                 {task.dueDate || task.dueSla || 'Standard 48-Hour Field Window'}
               </Text>
@@ -528,25 +530,25 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
           </View>
 
           <View style={styles.metaList}>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Shop / Business Name:</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Shop / Business Name:</Text>
               <Text style={styles.metaValueBold}>{task.contactName || task.title || 'Merchant Establishment'}</Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Category:</Text>
-              <Text style={styles.metaValue}>{task.territory || 'Retail Merchant'}</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Category:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{task.territory || 'Retail Merchant'}</Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Contact Person:</Text>
-              <Text style={styles.metaValue}>{task.contactName || 'Store Manager / Owner'}</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Contact Person:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{task.contactName || 'Store Manager / Owner'}</Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Contact Phone:</Text>
-              <Text style={styles.metaValue}>{task.contactPhone || 'Phone unavailable'}</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Contact Phone:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{task.contactPhone || 'Phone unavailable'}</Text>
             </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Site Address:</Text>
-              <Text style={styles.metaValue}>{task.address || task.territory || 'Location on file'}</Text>
+            <View style={[styles.metaRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Site Address:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{task.address || task.territory || 'Location on file'}</Text>
             </View>
           </View>
 
@@ -574,21 +576,21 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
             </View>
           </View>
 
-          <Text style={styles.taskTitle}>{task.title}</Text>
+          <Text style={[styles.taskTitle, { color: colors.text }]}>{task.title}</Text>
           <View style={styles.badgeRow}>
             <FICPriorityBadge priority={task.priority} />
             <FICStatusBadge status={task.status} showIcon={true} />
           </View>
 
           <View style={{ marginTop: 14 }}>
-            <Text style={styles.instructionHeading}>Field Instructions & Directives:</Text>
-            <Text style={styles.descriptionText}>{task.description}</Text>
+            <Text style={[styles.instructionHeading, { color: colors.textSecondary }]}>Field Instructions & Directives:</Text>
+            <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{task.description}</Text>
           </View>
 
           {task.notes ? (
             <View style={[styles.metaRow, { marginTop: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9' }]}>
-              <Text style={styles.metaLabel}>Operational Notes:</Text>
-              <Text style={styles.metaValue}>{task.notes}</Text>
+              <Text style={[styles.metaLabel, { color: colors.textMuted }]}>Operational Notes:</Text>
+              <Text style={[styles.metaValue, { color: colors.text }]}>{task.notes}</Text>
             </View>
           ) : null}
         </FICCard>
@@ -649,12 +651,12 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
                 ) : (
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    style={styles.photoUploadDashed}
+                    style={[styles.photoUploadDashed, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => setActivePhotoUploadType('BEFORE')}
                   >
                     <Icon name="camera-plus-outline" size={30} color="#64748B" />
-                    <Text style={styles.photoUploadText}>Attach Before Photo</Text>
-                    <Text style={styles.photoUploadSub}>Camera / Gallery</Text>
+                    <Text style={[styles.photoUploadText, { color: colors.text }]}>Attach Before Photo</Text>
+                    <Text style={[styles.photoUploadSub, { color: colors.textMuted }]}>Camera / Gallery</Text>
                   </TouchableOpacity>
                 )}
                 {!isCompleted && beforePhotoUrl ? (
@@ -756,9 +758,9 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
           )}
 
           {/* Status Switcher (Pending, In Progress, Completed) */}
-          <View style={styles.statusSwitcherContainer}>
+          <View style={[styles.statusSwitcherContainer, { borderTopColor: colors.border }]}>
             <Text style={styles.statusSwitcherHeaderLabel}>SELECT TASK STATUS:</Text>
-            <View style={styles.statusSegmentRow}>
+            <View style={[styles.statusSegmentRow, { backgroundColor: isDark ? colors.surfaceElevated : '#F1F5F9' }]}>
               {/* 1. PENDING */}
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -920,9 +922,9 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
         onRequestClose={() => setIsRejectModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Reject Task</Text>
-            <Text style={styles.modalSub}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surfaceElevated }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Reject Task</Text>
+            <Text style={[styles.modalSub, { color: colors.textSecondary }]}>
               Please specify reason for declining this assigned task:
             </Text>
             <FICTextInput
@@ -1006,22 +1008,22 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
             </View>
 
             {exportedReportResult ? (
-              <View style={styles.reportDetailsBox}>
+              <View style={[styles.reportDetailsBox, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
                 <View style={styles.reportDetailRow}>
-                  <Text style={styles.reportDetailLabel}>File Name:</Text>
-                  <Text style={styles.reportDetailValue} numberOfLines={1}>
+                  <Text style={[styles.reportDetailLabel, { color: colors.textMuted }]}>File Name:</Text>
+                  <Text style={[styles.reportDetailValue, { color: colors.text }]} numberOfLines={1}>
                     {exportedReportResult.fileName}
                   </Text>
                 </View>
                 <View style={styles.reportDetailRow}>
-                  <Text style={styles.reportDetailLabel}>File Size:</Text>
-                  <Text style={styles.reportDetailValue}>
+                  <Text style={[styles.reportDetailLabel, { color: colors.textMuted }]}>File Size:</Text>
+                  <Text style={[styles.reportDetailValue, { color: colors.text }]}>
                     {Math.round((exportedReportResult.fileSize || 1024) / 1024)} KB
                   </Text>
                 </View>
                 <View style={styles.reportDetailRow}>
-                  <Text style={styles.reportDetailLabel}>Storage Path:</Text>
-                  <Text style={styles.reportDetailValue} numberOfLines={2}>
+                  <Text style={[styles.reportDetailLabel, { color: colors.textMuted }]}>Storage Path:</Text>
+                  <Text style={[styles.reportDetailValue, { color: colors.text }]} numberOfLines={2}>
                     {exportedReportResult.displayPath}
                   </Text>
                 </View>

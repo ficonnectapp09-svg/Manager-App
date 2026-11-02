@@ -14,7 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
+import { socketService } from '../../services/realtime/SocketService';
 import { Activity } from '../../types';
 import { DashboardSummaryData } from '../../services/repositories/IDashboardRepository';
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
@@ -33,6 +35,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [summary, setSummary] = useState<DashboardSummaryData | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -75,6 +78,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   useEffect(() => {
     loadDashboardData();
+  }, [loadDashboardData]);
+
+  // Real-time automatic updates (Module 12)
+  useEffect(() => {
+    const unsubTask = socketService.subscribe('task', () => loadDashboardData(true));
+    const unsubVendor = socketService.subscribe('vendor', () => loadDashboardData(true));
+    const unsubManager = socketService.subscribe('manager', () => loadDashboardData(true));
+    const unsubReconnect = socketService.onReconnect(() => loadDashboardData(true));
+    return () => {
+      unsubTask();
+      unsubVendor();
+      unsubManager();
+      unsubReconnect();
+    };
   }, [loadDashboardData]);
 
   const handleRefresh = () => {
@@ -158,14 +175,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     : 'Manager';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       {/* TOP BRANDING & PROFILE BAR */}
-      <View style={styles.topHeader}>
+      <View style={[styles.topHeader, { backgroundColor: colors.surfaceElevated, borderBottomColor: colors.border }]}>
         <View style={styles.headerLeftGroup}>
           <TouchableOpacity
-            style={styles.hamburgerButton}
+            style={[styles.hamburgerButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.7}
             onPress={onOpenDrawer}
             accessibilityLabel="Open Navigation Menu"
@@ -177,7 +194,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
         <View style={styles.headerRightActions}>
           <TouchableOpacity
-            style={styles.bellButton}
+            style={[styles.bellButton, { backgroundColor: colors.surface }]}
             activeOpacity={0.7}
             onPress={() => onNavigateRoute && onNavigateRoute('Notifications')}
             accessibilityLabel="Notifications"
@@ -187,7 +204,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.profileCircleButton}
+            style={[styles.profileCircleButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.7}
             onPress={() => onNavigateRoute && onNavigateRoute('Profile')}
             accessibilityLabel="User Profile"
@@ -220,19 +237,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           />
 
           <View style={styles.heroContent}>
-            <View style={styles.heroTextSection}>
-              <Text style={styles.heroGreeting}>Good Morning,</Text>
-              <Text style={styles.heroName}>{managerDisplayName}!</Text>
-              <Text style={styles.heroSubtext}>
+            <View style={[styles.heroTextSection, isDark && { backgroundColor: 'rgba(23, 34, 53, 0.92)', borderColor: colors.border }]}>
+              <Text style={[styles.heroGreeting, { color: isDark ? colors.textMuted : '#334155' }]}>Good Morning,</Text>
+              <Text style={[styles.heroName, { color: isDark ? colors.goldAccent : '#1D4ED8' }]}>{managerDisplayName}!</Text>
+              <Text style={[styles.heroSubtext, { color: isDark ? colors.text : '#0F172A' }]}>
                 Let's build a stronger{'\n'}Tamil Nadu together.
               </Text>
             </View>
 
-            <View style={styles.scopeCapsule}>
+            <View style={[styles.scopeCapsule, isDark && { backgroundColor: 'rgba(23, 34, 53, 0.92)', borderColor: colors.border }]}>
               <Text style={styles.locationPin}>📍</Text>
-              <Text style={styles.scopeTextBold}>Tamil Nadu</Text>
+              <Text style={[styles.scopeTextBold, { color: isDark ? colors.text : '#0F172A' }]}>Tamil Nadu</Text>
               <Text style={styles.scopeSeparator}>›</Text>
-              <Text style={styles.scopeText}>All Districts</Text>
+              <Text style={[styles.scopeText, { color: isDark ? colors.textSecondary : '#334155' }]}>All Districts</Text>
               <Text style={styles.scopeSeparator}>›</Text>
               <Text style={styles.scopeText}>All Divisions</Text>
               <Text style={styles.scopeSeparator}>›</Text>
@@ -245,7 +262,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         <View style={styles.kpiGrid}>
           {/* Card 1: Total Managers */}
           <TouchableOpacity
-            style={styles.kpiCard}
+            style={[styles.kpiCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => onNavigateRoute && onNavigateRoute('FieldManagers')}
           >
@@ -254,11 +271,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
             <View style={styles.kpiRightCol}>
               <View style={styles.kpiHeaderRow}>
-                <Text style={styles.kpiTitle}>Total Managers</Text>
+                <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>Total Managers</Text>
                 <Icon name="chevron-right" size={16} color="#94A3B8" />
               </View>
               <View style={styles.kpiValueRow}>
-                <Text style={styles.kpiNumber}>{summary?.managerCount || 13}</Text>
+                <Text style={[styles.kpiNumber, { color: colors.text }]}>{summary?.managerCount ?? 0}</Text>
                 <View style={styles.growthBadgeCol}>
                   <Text style={styles.growthTextPositive}>↑ 7.7%</Text>
                   <Text style={styles.growthVsText}>vs last month</Text>
@@ -269,7 +286,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
           {/* Card 2: Total Vendors */}
           <TouchableOpacity
-            style={styles.kpiCard}
+            style={[styles.kpiCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => onNavigateRoute && onNavigateRoute('Vendors')}
           >
@@ -278,11 +295,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
             <View style={styles.kpiRightCol}>
               <View style={styles.kpiHeaderRow}>
-                <Text style={styles.kpiTitle}>Total Vendors</Text>
+                <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>Total Vendors</Text>
                 <Icon name="chevron-right" size={16} color="#94A3B8" />
               </View>
               <View style={styles.kpiValueRow}>
-                <Text style={styles.kpiNumber}>{summary?.vendorCount || 248}</Text>
+                <Text style={[styles.kpiNumber, { color: colors.text }]}>{summary?.vendorCount ?? 0}</Text>
                 <View style={styles.growthBadgeCol}>
                   <Text style={styles.growthTextPositive}>↑ 12.4%</Text>
                   <Text style={styles.growthVsText}>vs last month</Text>
@@ -293,7 +310,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
           {/* Card 3: Active Outlets */}
           <TouchableOpacity
-            style={styles.kpiCard}
+            style={[styles.kpiCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => onNavigateRoute && onNavigateRoute('Vendors')}
           >
@@ -302,11 +319,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
             <View style={styles.kpiRightCol}>
               <View style={styles.kpiHeaderRow}>
-                <Text style={styles.kpiTitle}>Active Outlets</Text>
+                <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>Active Outlets</Text>
                 <Icon name="chevron-right" size={16} color="#94A3B8" />
               </View>
               <View style={styles.kpiValueRow}>
-                <Text style={styles.kpiNumber}>{summary?.activeOutletsCount || 186}</Text>
+                <Text style={[styles.kpiNumber, { color: colors.text }]}>{summary?.activeOutletsCount ?? 0}</Text>
                 <View style={styles.growthBadgeCol}>
                   <Text style={styles.growthTextPositive}>↑ 9.1%</Text>
                   <Text style={styles.growthVsText}>vs last month</Text>
@@ -317,7 +334,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
           {/* Card 4: Unresolved Issues */}
           <TouchableOpacity
-            style={styles.kpiCard}
+            style={[styles.kpiCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => onNavigateRoute && onNavigateRoute('Issues')}
           >
@@ -326,11 +343,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
             <View style={styles.kpiRightCol}>
               <View style={styles.kpiHeaderRow}>
-                <Text style={styles.kpiTitle}>Unresolved Issues</Text>
+                <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>Unresolved Issues</Text>
                 <Icon name="chevron-right" size={16} color="#94A3B8" />
               </View>
               <View style={styles.kpiValueRow}>
-                <Text style={styles.kpiNumber}>{summary?.openIssueCount || 8}</Text>
+                <Text style={[styles.kpiNumber, { color: colors.text }]}>{summary?.openIssueCount ?? 0}</Text>
                 <View style={styles.growthBadgeCol}>
                   <Text style={[styles.growthTextPositive, { color: '#DC2626' }]}>High Priority</Text>
                   <Text style={styles.growthVsText}>requires action</Text>
@@ -342,13 +359,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
         {/* QUICK ACTIONS */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionHeading}>Quick Actions</Text>
+          <Text style={[styles.sectionHeading, { color: colors.text }]}>Quick Actions</Text>
         </View>
 
         <View style={styles.quickActionsGrid}>
           {/* Onboard Merchant */}
           <TouchableOpacity
-            style={[styles.quickActionCard, { backgroundColor: '#EFF6FF' }]}
+            style={[styles.quickActionCard, { backgroundColor: colors.surface, borderColor: colors.border }, { backgroundColor: '#EFF6FF' }]}
             activeOpacity={0.8}
             onPress={() => onNavigateRoute && onNavigateRoute('AddVendor')}
           >
@@ -356,7 +373,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Icon name="store-plus" size={18} color="#FFFFFF" />
             </View>
             <View style={styles.quickActionLabelRow}>
-              <Text style={styles.quickActionTitle}>Onboard Merchant</Text>
+              <Text style={[styles.quickActionTitle, { color: colors.text }]}>Onboard Merchant</Text>
               <Icon name="chevron-right" size={14} color="#2563EB" style={{ marginLeft: 2 }} />
             </View>
           </TouchableOpacity>
@@ -371,7 +388,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Icon name="file-document-outline" size={18} color="#FFFFFF" />
             </View>
             <View style={styles.quickActionLabelRow}>
-              <Text style={styles.quickActionTitle}>Daily Report</Text>
+              <Text style={[styles.quickActionTitle, { color: colors.text }]}>Daily Report</Text>
               <Icon name="chevron-right" size={14} color="#7C3AED" style={{ marginLeft: 2 }} />
             </View>
           </TouchableOpacity>
@@ -386,7 +403,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Icon name="checkbox-marked-circle-outline" size={18} color="#FFFFFF" />
             </View>
             <View style={styles.quickActionLabelRow}>
-              <Text style={styles.quickActionTitle}>Tasks</Text>
+              <Text style={[styles.quickActionTitle, { color: colors.text }]}>Tasks</Text>
               <Icon name="chevron-right" size={14} color="#059669" style={{ marginLeft: 2 }} />
             </View>
           </TouchableOpacity>
@@ -394,19 +411,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
         {/* TERRITORY DIRECTORIES - Vendor, Manager & Agent Directories Separated */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionHeading}>Territory Directories</Text>
+          <Text style={[styles.sectionHeading, { color: colors.text }]}>Territory Directories</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={onOpenDrawer}
           >
-            <Text style={styles.viewAllText}>Menu ☰</Text>
+            <Text style={[styles.viewAllText, { color: colors.primary }]}>Menu ☰</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.directoriesRow}>
           {/* Vendor Directory */}
           <TouchableOpacity
-            style={styles.directoryCard}
+            style={[styles.directoryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => onNavigateRoute && onNavigateRoute('Vendors')}
             accessibilityRole="button"
@@ -415,17 +432,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={[styles.directoryIconCircle, { backgroundColor: '#EFF6FF' }]}>
               <Icon name="storefront-outline" size={24} color="#2563EB" />
             </View>
-            <Text style={styles.directoryCardTitle} numberOfLines={1}>Vendors</Text>
-            <Text style={styles.directoryCardSubtitle} numberOfLines={1}>Merchant Outlets</Text>
+            <Text style={[styles.directoryCardTitle, { color: colors.text }]} numberOfLines={1}>Vendors</Text>
+            <Text style={[styles.directoryCardSubtitle, { color: colors.textMuted }]} numberOfLines={1}>Merchant Outlets</Text>
             <View style={styles.directoryCardPill}>
-              <Text style={styles.directoryCardPillText}>240+ Outlets</Text>
+              <Text style={styles.directoryCardPillText}>{summary?.vendorCount ?? 0} Outlets</Text>
               <Icon name="chevron-right" size={12} color="#1D4ED8" />
             </View>
           </TouchableOpacity>
 
           {/* Manager Directory */}
           <TouchableOpacity
-            style={styles.directoryCard}
+            style={[styles.directoryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => onNavigateRoute && onNavigateRoute('FieldManagers')}
             accessibilityRole="button"
@@ -434,17 +451,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={[styles.directoryIconCircle, { backgroundColor: '#F5F3FF' }]}>
               <Icon name="account-tie-outline" size={24} color="#7C3AED" />
             </View>
-            <Text style={styles.directoryCardTitle} numberOfLines={1}>Managers</Text>
-            <Text style={styles.directoryCardSubtitle} numberOfLines={1}>Supervisors & Peers</Text>
+            <Text style={[styles.directoryCardTitle, { color: colors.text }]} numberOfLines={1}>Managers</Text>
+            <Text style={[styles.directoryCardSubtitle, { color: colors.textMuted }]} numberOfLines={1}>Supervisors & Peers</Text>
             <View style={[styles.directoryCardPill, { backgroundColor: '#F5F3FF' }]}>
-              <Text style={[styles.directoryCardPillText, { color: '#7C3AED' }]}>13 Managers</Text>
+              <Text style={[styles.directoryCardPillText, { color: '#7C3AED' }]}>{summary?.managerCount ?? 0} Managers</Text>
               <Icon name="chevron-right" size={12} color="#7C3AED" />
             </View>
           </TouchableOpacity>
 
           {/* Agent Directory */}
           <TouchableOpacity
-            style={styles.directoryCard}
+            style={[styles.directoryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => onNavigateRoute && onNavigateRoute('FieldAgents')}
             accessibilityRole="button"
@@ -453,8 +470,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={[styles.directoryIconCircle, { backgroundColor: '#ECFDF5' }]}>
               <Icon name="account-group-outline" size={24} color="#059669" />
             </View>
-            <Text style={styles.directoryCardTitle} numberOfLines={1}>Field Agents</Text>
-            <Text style={styles.directoryCardSubtitle} numberOfLines={1}>Ground Workforce</Text>
+            <Text style={[styles.directoryCardTitle, { color: colors.text }]} numberOfLines={1}>Field Agents</Text>
+            <Text style={[styles.directoryCardSubtitle, { color: colors.textMuted }]} numberOfLines={1}>Ground Workforce</Text>
             <View style={[styles.directoryCardPill, { backgroundColor: '#ECFDF5' }]}>
               <Text style={[styles.directoryCardPillText, { color: '#059669' }]}>Active Force</Text>
               <Icon name="chevron-right" size={12} color="#059669" />
@@ -464,7 +481,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
         {/* DIRECT SUPERVISOR SECTION (Module 1) */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionHeading}>Direct Supervisor</Text>
+          <Text style={[styles.sectionHeading, { color: colors.text }]}>Direct Supervisor</Text>
           <View style={styles.supervisorStatusBadge}>
             <View style={styles.supervisorDot} />
             <Text style={styles.supervisorStatusText}>Assigned Authority</Text>
@@ -472,7 +489,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </View>
 
         {manager?.supervisor ? (
-          <View style={styles.supervisorCard}>
+          <View style={[styles.supervisorCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.supervisorTopRow}>
               <FICAvatar
                 name={manager.supervisor.name}
@@ -481,28 +498,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               />
               <View style={styles.supervisorInfoCol}>
                 <View style={styles.supervisorNameRow}>
-                  <Text style={styles.supervisorName}>{manager.supervisor.name}</Text>
+                  <Text style={[styles.supervisorName, { color: colors.text }]}>{manager.supervisor.name}</Text>
                   <View style={styles.supervisorRoleBadge}>
                     <Icon name="shield-check" size={13} color="#4338CA" />
                     <Text style={styles.supervisorRoleText}>Admin</Text>
                   </View>
                 </View>
-                <Text style={styles.supervisorDesignation}>{manager.supervisor.designation}</Text>
+                <Text style={[styles.supervisorDesignation, { color: colors.textSecondary }]}>{manager.supervisor.designation}</Text>
                 <View style={styles.supervisorTerritoryRow}>
                   <Icon name="map-marker-outline" size={13} color="#64748B" />
-                  <Text style={styles.supervisorTerritoryText}>
+                  <Text style={[styles.supervisorTerritoryText, { color: colors.textMuted }]}>
                     {manager.supervisor.territory || manager.state || 'Tamil Nadu'}
                   </Text>
                 </View>
               </View>
             </View>
 
-            <View style={styles.supervisorDivider} />
+            <View style={[styles.supervisorDivider, { backgroundColor: colors.divider }]} />
 
             <View style={styles.supervisorContactRow}>
               {manager.supervisor.phone ? (
                 <TouchableOpacity
-                  style={styles.supervisorContactBtn}
+                  style={[styles.supervisorContactBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
                   activeOpacity={0.75}
                   onPress={() => Linking.openURL(`tel:${manager.supervisor?.phone}`)}
                   accessibilityRole="button"
@@ -511,7 +528,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <View style={[styles.contactIconBg, { backgroundColor: '#ECFDF5' }]}>
                     <Icon name="phone" size={16} color="#059669" />
                   </View>
-                  <Text style={styles.supervisorContactText} numberOfLines={1}>
+                  <Text style={[styles.supervisorContactText, { color: colors.text }]} numberOfLines={1}>
                     {manager.supervisor.phone}
                   </Text>
                 </TouchableOpacity>
@@ -519,7 +536,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
               {manager.supervisor.email ? (
                 <TouchableOpacity
-                  style={styles.supervisorContactBtn}
+                  style={[styles.supervisorContactBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
                   activeOpacity={0.75}
                   onPress={() => Linking.openURL(`mailto:${manager.supervisor?.email}`)}
                   accessibilityRole="button"
@@ -528,7 +545,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <View style={[styles.contactIconBg, { backgroundColor: '#EFF6FF' }]}>
                     <Icon name="email-outline" size={16} color="#2563EB" />
                   </View>
-                  <Text style={styles.supervisorContactText} numberOfLines={1}>
+                  <Text style={[styles.supervisorContactText, { color: colors.text }]} numberOfLines={1}>
                     {manager.supervisor.email}
                   </Text>
                 </TouchableOpacity>
@@ -536,9 +553,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
           </View>
         ) : (
-          <View style={styles.emptySupervisorCard}>
+          <View style={[styles.emptySupervisorCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Icon name="shield-account-outline" size={32} color="#94A3B8" />
-            <Text style={styles.emptySupervisorTitle}>No Direct Supervisor Assigned</Text>
+            <Text style={[styles.emptySupervisorTitle, { color: colors.text }]}>No Direct Supervisor Assigned</Text>
             <Text style={styles.emptySupervisorSubtitle}>
               Territory operations are currently self-directed for your authorized level.
             </Text>
@@ -547,17 +564,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
         {/* TODAY'S ACTIVITIES (Module 2: Manager-Specific Data Only) */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionHeading}>Today's Activities</Text>
+          <Text style={[styles.sectionHeading, { color: colors.text }]}>Today's Activities</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => onNavigateRoute && onNavigateRoute('Reports')}
           >
-            <Text style={styles.viewAllText}>View All</Text>
+            <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
           </TouchableOpacity>
         </View>
 
         {activities.length > 0 ? (
-          <View style={styles.activityListCard}>
+          <View style={[styles.activityListCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {activities.map((act, index) => {
               const visual = getActivityVisuals(act, index);
               const isLast = index === activities.length - 1;
@@ -572,10 +589,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <Icon name={visual.iconName} size={18} color={visual.color} />
                   </View>
                   <View style={styles.activityTextCol}>
-                    <Text style={styles.activityTitle} numberOfLines={1}>
+                    <Text style={[styles.activityTitle, { color: colors.text }]} numberOfLines={1}>
                       {visual.title}
                     </Text>
-                    <Text style={styles.activitySubtitle} numberOfLines={1}>
+                    <Text style={[styles.activitySubtitle, { color: colors.textMuted }]} numberOfLines={1}>
                       {visual.subtitle}
                     </Text>
                   </View>
@@ -588,9 +605,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             })}
           </View>
         ) : (
-          <View style={styles.emptyActivityCard}>
+          <View style={[styles.emptyActivityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Icon name="calendar-check-outline" size={28} color="#94A3B8" />
-            <Text style={styles.emptyActivityText}>No activities recorded today yet.</Text>
+            <Text style={[styles.emptyActivityText, { color: colors.textMuted }]}>No activities recorded today yet.</Text>
           </View>
         )}
 

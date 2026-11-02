@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { cameraLocationService } from '../../services/camera/CameraLocationService';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface FICImageUploadModalProps {
   visible: boolean;
@@ -32,6 +33,7 @@ export const FICImageUploadModal: React.FC<FICImageUploadModalProps> = ({
   onRemoveImage,
   onClose,
 }) => {
+  const { colors, isDark } = useTheme();
   const [selectedUri, setSelectedUri] = useState<string | null>(currentImageUri || null);
   const [selectedName, setSelectedName] = useState<string>('Captured_Photo.jpg');
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
@@ -79,16 +81,16 @@ export const FICImageUploadModal: React.FC<FICImageUploadModalProps> = ({
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={styles.cardContainer}>
-              <View style={styles.header}>
-                <View style={styles.dragHandle} />
+            <View style={[styles.cardContainer, { backgroundColor: colors.surfaceElevated }]}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={[styles.dragHandle, isDark && { backgroundColor: colors.borderHighlight }]} />
                 <View style={styles.titleRow}>
-                  <Text style={styles.title}>{title}</Text>
-                  <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                  <TouchableOpacity onPress={onClose} style={[styles.closeBtn, isDark && { backgroundColor: colors.surface }]} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                     <Icon name="close" size={20} color="#64748B" />
                   </TouchableOpacity>
                 </View>
-                {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+                {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
               </View>
 
               <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
@@ -96,9 +98,9 @@ export const FICImageUploadModal: React.FC<FICImageUploadModalProps> = ({
                 {selectedUri ? (
                   <View style={styles.previewBox}>
                     <Image source={{ uri: selectedUri }} style={styles.previewImage} resizeMode="cover" />
-                    <View style={styles.previewMetaRow}>
+                    <View style={[styles.previewMetaRow, { backgroundColor: colors.surfaceElevated }]}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.previewName} numberOfLines={1}>
+                        <Text style={[styles.previewName, { color: colors.text }]} numberOfLines={1}>
                           {selectedName}
                         </Text>
                         <Text style={styles.previewSize}>
@@ -119,7 +121,7 @@ export const FICImageUploadModal: React.FC<FICImageUploadModalProps> = ({
                 ) : null}
 
                 {/* UPLOAD ACTIONS ROW */}
-                <Text style={styles.sectionLabel}>Capture Real Device Photo</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Capture Real Device Photo</Text>
                 <View style={styles.actionsRow}>
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}
@@ -129,7 +131,7 @@ export const FICImageUploadModal: React.FC<FICImageUploadModalProps> = ({
                   >
                     <Icon name="camera" size={32} color="#2563EB" />
                     <Text style={[styles.actionBtnTitle, { color: '#1D4ED8' }]}>Real Camera</Text>
-                    <Text style={styles.actionBtnSub}>Open device camera app</Text>
+                    <Text style={[styles.actionBtnSub, { color: colors.textMuted }]}>Open device camera app</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -140,7 +142,7 @@ export const FICImageUploadModal: React.FC<FICImageUploadModalProps> = ({
                   >
                     <Icon name="image-multiple" size={32} color="#16A34A" />
                     <Text style={[styles.actionBtnTitle, { color: '#15803D' }]}>Device Gallery</Text>
-                    <Text style={styles.actionBtnSub}>Choose photo file</Text>
+                    <Text style={[styles.actionBtnSub, { color: colors.textMuted }]}>Choose photo file</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -153,15 +155,15 @@ export const FICImageUploadModal: React.FC<FICImageUploadModalProps> = ({
               </ScrollView>
 
               {/* BOTTOM CONFIRM BUTTON */}
-              <View style={styles.footer}>
+              <View style={[styles.footer, { borderTopColor: colors.border }]}>
                 <TouchableOpacity
-                  style={[styles.confirmBtn, !selectedUri && styles.confirmBtnDisabled]}
+                  style={[styles.confirmBtn, { backgroundColor: colors.primary }, !selectedUri && styles.confirmBtnDisabled]}
                   onPress={handleConfirm}
                   disabled={!selectedUri}
                   activeOpacity={0.85}
                 >
                   <Icon name="check" size={20} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.confirmBtnText}>Attach & Save Photo</Text>
+                  <Text style={[styles.confirmBtnText, isDark && { color: '#0B1220' }]}>Attach & Save Photo</Text>
                 </TouchableOpacity>
               </View>
             </View>

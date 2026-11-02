@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICCard } from '../../components/ui/FICCard';
 import { FICDropdownModal } from '../../components/ui/FICDropdownModal';
@@ -28,7 +29,7 @@ import { cameraLocationService } from '../../services/camera/CameraLocationServi
 import { googleMapsLocationService } from '../../services/maps';
 import { reportExportService } from '../../services/reports/ReportExportService';
 import { ExportResult } from '../../services/reports/IReportExportService';
-import { ManagerRole, VisitRecord } from '../../types';
+import { ManagerRole, VisitRecord, DailyReport } from '../../types';
 
 export interface ReportsScreenProps {
   initialTab?: string;
@@ -36,7 +37,8 @@ export interface ReportsScreenProps {
   onNavigateRoute?: (routeName: string, params?: Record<string, any>) => void;
 }
 
-type ReportScopeFilter = 'ALL' | 'MY' | 'EQUAL' | 'SUBORDINATE';
+type ReportScopeFilter = 'ALL' | 'MY' | 'EQUAL';
+type ReportCategoryTab = 'FIELD_VISITS' | 'TEAM_REPORTS';
 type ReportTierFilter = 'ALL' | ManagerRole;
 
 const INITIAL_VISIT_RECORDS: VisitRecord[] = [];
@@ -45,6 +47,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager: authManager } = useAuth();
   const [records, setRecords] = useState<VisitRecord[]>(INITIAL_VISIT_RECORDS);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -53,6 +56,9 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeScope, setActiveScope] = useState<ReportScopeFilter>('ALL');
   const [activeTier, setActiveTier] = useState<ReportTierFilter>('ALL');
+  const [activeCategory, setActiveCategory] = useState<ReportCategoryTab>('FIELD_VISITS');
+  const [teamReports, setTeamReports] = useState<DailyReport[]>([]);
+  const [selectedVisitDetail, setSelectedVisitDetail] = useState<VisitRecord | null>(null);
 
   // Jurisdiction Locking: Users cannot filter/change jurisdictions equal to or above them
   const userRole = authManager?.role || ManagerRole.STATE_MANAGER;
@@ -134,16 +140,24 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 
   const loadVisitRecords = useCallback(async () => {
     try {
-      console.log('[ReportsScreen] Calling getVisitRecords...');
+      console.log('[ReportsScreen] Calling getVisitRecords & getReports...');
       const list = await services.fieldVisitService.getVisitRecords();
-      console.log('[ReportsScreen] Received list count:', list?.length);
+      console.log('[ReportsScreen] Received visit list count:', list?.length);
       if (list) {
         setRecords([...list]);
+      }
+      try {
+        const reports = await services.dailyReportRepository.getReports(authManager?.id || '');
+        if (reports && Array.isArray(reports)) {
+          setTeamReports(reports);
+        }
+      } catch (rErr) {
+        console.warn('[ReportsScreen] load teamReports note:', rErr);
       }
     } catch (err) {
       console.warn('[ReportsScreen] loadVisitRecords error:', err);
     }
-  }, []);
+  }, [authManager?.id]);
 
   useEffect(() => {
     loadVisitRecords();
@@ -169,11 +183,10 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
     return (record.managerName || '').toLowerCase().includes(myName);
   };
 
-  // Scope counts
+  // Scope counts (Subordinate filter removed as per Module 7)
   const scopeCounts = useMemo(() => {
     let myCount = 0;
     let equalCount = 0;
-    let subCount = 0;
 
     records.forEach(r => {
       const role = getRecordManagerRole(r);
@@ -181,8 +194,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         myCount++;
       } else if (role === ManagerRole.STATE_MANAGER) {
         equalCount++;
-      } else {
-        subCount++;
       }
     });
 
@@ -190,7 +201,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       all: records.length,
       my: myCount,
       equal: equalCount,
-      subordinate: subCount,
     };
   }, [records, authManager?.name]);
 
@@ -318,19 +328,29 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         subtitle: divId === 'ALL' ? 'Search all reports in district' : `Division code: ${divId}`,
       }));
 
+  // Filtered Team Reports (Module 14)
+  const filteredTeamReports = useMemo(() => {
+    return teamReports.filter(r => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (r.workSummary || '').toLowerCase().includes(q) ||
+        (r.managerName || '').toLowerCase().includes(q) ||
+        (r.date || '').toLowerCase().includes(q)
+      );
+    });
+  }, [teamReports, searchQuery]);
   // Filtered Records
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
       const role = getRecordManagerRole(r);
       const isMine = isMyReport(r);
 
-      // 1. Scope filter
+      // 1. Scope filter (Subordinate removed as per Module 7)
       if (activeScope === 'MY') {
         if (!isMine) return false;
       } else if (activeScope === 'EQUAL') {
         if (role !== ManagerRole.STATE_MANAGER || isMine) return false;
-      } else if (activeScope === 'SUBORDINATE') {
-        if (role === ManagerRole.STATE_MANAGER) return false;
       }
 
       // 2. Tier filter
@@ -564,7 +584,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const territoryScopeText = authManager?.territoryName || 'Tamil Nadu (Whole State)';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       {/* Header */}
@@ -578,7 +598,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       />
 
       <FlatList
-        data={filteredRecords}
+        data={(activeCategory === 'FIELD_VISITS' ? filteredRecords : filteredTeamReports) as any}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
@@ -591,22 +611,64 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         }
         ListHeaderComponent={
           <View style={styles.headerContentWrapper}>
+            {/* Primary Category Switcher (Module 14) */}
+            <View style={[styles.primaryCategorySwitcher, { backgroundColor: colors.surfaceElevated }]}>
+              <TouchableOpacity
+                style={[
+                  styles.primaryCategoryTab,
+                  activeCategory === 'FIELD_VISITS' && [styles.primaryCategoryTabActive, { backgroundColor: colors.primary }],
+                ]}
+                onPress={() => setActiveCategory('FIELD_VISITS')}
+              >
+                <Icon
+                  name="storefront-check"
+                  size={15}
+                  color={activeCategory === 'FIELD_VISITS' ? '#FFFFFF' : '#475569'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  style={[
+                    styles.primaryCategoryTabText,
+                    activeCategory === 'FIELD_VISITS' && styles.primaryCategoryTabTextActive,
+                  ]}
+                >
+                  Field Visits & Audits ({filteredRecords.length})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.primaryCategoryTab,
+                  activeCategory === 'TEAM_REPORTS' && [styles.primaryCategoryTabActive, { backgroundColor: colors.primary }],
+                ]}
+                onPress={() => setActiveCategory('TEAM_REPORTS')}
+              >
+                <Icon
+                  name="file-chart"
+                  size={15}
+                  color={activeCategory === 'TEAM_REPORTS' ? '#FFFFFF' : '#475569'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  style={[
+                    styles.primaryCategoryTabText,
+                    activeCategory === 'TEAM_REPORTS' && styles.primaryCategoryTabTextActive,
+                  ]}
+                >
+                  Team Reports ({filteredTeamReports.length})
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.titleActionRow}>
               <View>
-                <Text style={styles.headerSubtitle}>Field Visit & Audit Reports</Text>
+                <Text style={styles.headerSubtitle}>
+                  {activeCategory === 'FIELD_VISITS' ? 'Field Visits & Shop Audits' : 'Periodic Team Reports'}
+                </Text>
                 <Text style={styles.scopeBadgeText}>
                   📍 Scope: {territoryScopeText}
                 </Text>
               </View>
-
-              <TouchableOpacity
-                style={styles.newVisitBtn}
-                activeOpacity={0.8}
-                onPress={() => setIsFieldVisitModalOpen(true)}
-              >
-                <Icon name="plus" size={16} color="#FFFFFF" />
-                <Text style={styles.newVisitBtnText}>Field Visit</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Dark Tier Badges Bar */}
@@ -724,22 +786,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.scopeBtn,
-                  activeScope === 'SUBORDINATE' && styles.scopeBtnActive,
-                ]}
-                onPress={() => setActiveScope('SUBORDINATE')}
-              >
-                <Text
-                  style={[
-                    styles.scopeBtnText,
-                    activeScope === 'SUBORDINATE' && styles.scopeBtnTextActive,
-                  ]}
-                >
-                  Subordinate ({scopeCounts.subordinate})
-                </Text>
-              </TouchableOpacity>
+
             </View>
 
             {/* Search Input Bar + Filter Trigger Button */}
@@ -792,106 +839,67 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </TouchableOpacity>
             </View>
 
-            {/* Horizontal Quick Tier Filter Pills */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickTierPillsScroll}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.tierQuickPill,
-                  activeTier === 'ALL' && styles.tierQuickPillActive,
-                ]}
-                onPress={() => setActiveTier('ALL')}
-              >
-                <Text
-                  style={[
-                    styles.tierQuickPillText,
-                    activeTier === 'ALL' && styles.tierQuickPillTextActive,
-                  ]}
-                >
-                  All Tiers
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.tierQuickPill,
-                  activeTier === ManagerRole.STATE_MANAGER && styles.tierQuickPillActive,
-                ]}
-                onPress={() => setActiveTier(ManagerRole.STATE_MANAGER)}
-              >
-                <Text
-                  style={[
-                    styles.tierQuickPillText,
-                    activeTier === ManagerRole.STATE_MANAGER && styles.tierQuickPillTextActive,
-                  ]}
-                >
-                  L1 State
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.tierQuickPill,
-                  activeTier === ManagerRole.DISTRICT_MANAGER && styles.tierQuickPillActive,
-                ]}
-                onPress={() => setActiveTier(ManagerRole.DISTRICT_MANAGER)}
-              >
-                <Text
-                  style={[
-                    styles.tierQuickPillText,
-                    activeTier === ManagerRole.DISTRICT_MANAGER && styles.tierQuickPillTextActive,
-                  ]}
-                >
-                  L2 District
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.tierQuickPill,
-                  activeTier === ManagerRole.DIVISION_MANAGER && styles.tierQuickPillActive,
-                ]}
-                onPress={() => setActiveTier(ManagerRole.DIVISION_MANAGER)}
-              >
-                <Text
-                  style={[
-                    styles.tierQuickPillText,
-                    activeTier === ManagerRole.DIVISION_MANAGER && styles.tierQuickPillTextActive,
-                  ]}
-                >
-                  L3 Division
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.tierQuickPill,
-                  activeTier === ManagerRole.PINCODE_MANAGER && styles.tierQuickPillActive,
-                ]}
-                onPress={() => setActiveTier(ManagerRole.PINCODE_MANAGER)}
-              >
-                <Text
-                  style={[
-                    styles.tierQuickPillText,
-                    activeTier === ManagerRole.PINCODE_MANAGER && styles.tierQuickPillTextActive,
-                  ]}
-                >
-                  L4 PIN Code
-                </Text>
-              </TouchableOpacity>
-            </ScrollView>
+            
           </View>
         }
-        renderItem={({ item }) => {
+        renderItem={({ item }: { item: any }) => {
+          if (activeCategory === 'TEAM_REPORTS') {
+            const reportItem = item as DailyReport;
+            const refId = `REP-${(reportItem.id || '000000').slice(-6).toUpperCase()}`;
+            return (
+              <FICCard style={styles.reportCard}>
+                <View style={styles.teamReportCardHeader}>
+                  <View style={styles.teamReportIdBadge}>
+                    <Icon name="file-document-outline" size={15} color={theme.colors.primary} />
+                    <Text style={styles.teamReportIdText}>{refId}</Text>
+                  </View>
+                  <View style={styles.statusBadgeGreen}>
+                    <Text style={styles.statusBadgeGreenText}>{reportItem.status || 'SUBMITTED'}</Text>
+                  </View>
+                </View>
+
+                <Text style={[styles.teamReportDateText, { color: colors.textMuted }]}>📅 Period: {reportItem.date}</Text>
+                <Text style={styles.managerRoleText}>
+                  👤 {reportItem.managerName || 'Territory Manager'} ({reportItem.role || 'Field Staff'})
+                </Text>
+
+                <Text style={[styles.teamReportSummaryText, { color: colors.text }]} numberOfLines={2}>
+                  {reportItem.workSummary || 'No summary provided.'}
+                </Text>
+
+                <View style={[styles.teamReportMetaRow, { borderTopColor: colors.border }]}>
+                  <Text style={styles.cardLocationText}>
+                    🏬 Visited: {reportItem.shopsVisitedCount ?? reportItem.vendorsVisited?.length ?? 0} Outlets
+                  </Text>
+                  {reportItem.voiceUrl ? (
+                    <View style={styles.voiceAttachedPill}>
+                      <Icon name="microphone" size={13} color="#2563EB" />
+                      <Text style={styles.voiceAttachedPillText}>Audio Memo</Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                <View style={styles.cardActionsRow}>
+                  <TouchableOpacity
+                    style={styles.viewDetailBtn}
+                    onPress={() => onNavigateRoute?.('ReportDetail', { reportId: reportItem.id })}
+                  >
+                    <Icon name="eye-outline" size={16} color={theme.colors.primary} />
+                    <Text style={styles.viewDetailBtnText}>View Full Audit</Text>
+                  </TouchableOpacity>
+                </View>
+              </FICCard>
+            );
+          }
+
+          const visitItem = item as VisitRecord;
+          const visitRefId = `VIS-${(visitItem.id || '000000').slice(-6).toUpperCase()}`;
           return (
             <FICCard style={styles.reportCard}>
               <View style={styles.cardHeaderRow}>
-                {item.photoUrl ? (
+                {visitItem.photoUrl ? (
                   <Image
-                    source={{ uri: item.photoUrl }}
+                    source={{ uri: visitItem.photoUrl }}
                     style={styles.cardShopImage}
                   />
                 ) : (
@@ -903,36 +911,41 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 <View style={styles.cardMainCol}>
                   <View style={styles.cardTitleRow}>
                     <Text style={styles.cardShopTitle} numberOfLines={1}>
-                      {item.shopName}
+                      {visitItem.shopName}
                     </Text>
                     <View
                       style={[
                         styles.interestBadge,
-                        item.isInterested ? styles.interestYes : styles.interestNo,
+                        visitItem.isInterested ? styles.interestYes : styles.interestNo,
                       ]}
                     >
                       <Text
                         style={[
                           styles.interestBadgeText,
-                          item.isInterested ? styles.interestYesText : styles.interestNoText,
+                          visitItem.isInterested ? styles.interestYesText : styles.interestNoText,
                         ]}
                       >
-                        {item.isInterested ? 'Interested' : 'Declined'}
+                        {visitItem.isInterested ? 'Interested' : 'Declined'}
                       </Text>
                     </View>
                   </View>
 
+                  <View style={styles.refIdRow}>
+                    <Text style={styles.refIdText}>Ref: {visitRefId}</Text>
+                    <Text style={styles.categoryPillText}>• {visitItem.category || 'General'}</Text>
+                  </View>
+
                   <Text style={styles.managerRoleText}>
-                    👤 {item.managerName} ({item.managerRole})
+                    👤 {visitItem.managerName} ({visitItem.managerRole})
                   </Text>
 
                   <Text style={styles.cardLocationText}>
-                    📍 {item.location} ({item.pincode}) • 🕒 {item.timestamp}
+                    📍 {visitItem.location} ({visitItem.pincode}) • 🕒 {visitItem.timestamp}
                   </Text>
 
-                  {item.reasonNotInterested && (
+                  {visitItem.reasonNotInterested && (
                     <Text style={styles.reasonText} numberOfLines={2}>
-                      Note: {item.reasonNotInterested}
+                      Note: {visitItem.reasonNotInterested}
                     </Text>
                   )}
                 </View>
@@ -942,20 +955,28 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <View style={styles.cardActionsRow}>
                 <TouchableOpacity
                   style={styles.pdfReportBtn}
-                  onPress={() => handleExportPDF(item)}
+                  onPress={() => handleExportPDF(visitItem)}
                 >
                   <Icon name="file-pdf-box" size={16} color="#DC2626" />
                   <Text style={styles.pdfReportBtnText}>PDF Report</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
+                  style={styles.viewDetailBtn}
+                  onPress={() => setSelectedVisitDetail(visitItem)}
+                >
+                  <Icon name="eye-outline" size={16} color={theme.colors.primary} />
+                  <Text style={styles.viewDetailBtnText}>Details</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   style={styles.navigateBtn}
                   onPress={() => {
                     googleMapsLocationService.openNavigation(
-                      item.latitude || null,
-                      item.longitude || null,
-                      item.shopName,
-                      item.location,
+                      visitItem.latitude || null,
+                      visitItem.longitude || null,
+                      visitItem.shopName,
+                      visitItem.location,
                     );
                   }}
                 >
@@ -1201,14 +1222,14 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   <View style={styles.stepBadge}>
                     <Text style={styles.stepBadgeText}>1</Text>
                   </View>
-                  <Text style={styles.stepTitle}>Shop Details & Business Category *</Text>
+                  <Text style={[styles.stepTitle, { color: colors.text }]}>Shop Details & Business Category *</Text>
                 </View>
 
                 <View style={styles.stepInputsRow}>
                   <View style={[styles.inputGroupCol, { flex: 1.2 }]}>
-                    <Text style={styles.fieldLabelStep}>Shop Name / Business Title</Text>
+                    <Text style={[styles.fieldLabelStep, { color: colors.textSecondary }]}>Shop Name / Business Title</Text>
                     <TextInput
-                      style={styles.textInputStyle}
+                      style={[styles.textInputStyle, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                       placeholder="e.g. Sri Lakshmi Supermarket"
                       placeholderTextColor="#94A3B8"
                       value={formShopName}
@@ -1217,13 +1238,13 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   </View>
 
                   <View style={[styles.inputGroupCol, { flex: 1 }]}>
-                    <Text style={styles.fieldLabelStep}>Business Category</Text>
+                    <Text style={[styles.fieldLabelStep, { color: colors.textSecondary }]}>Business Category</Text>
                     <TouchableOpacity
-                      style={styles.selectCategoryBtn}
+                      style={[styles.selectCategoryBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                       onPress={() => setShowFormCategoryModal(true)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.selectCategoryText}>{formCategory}</Text>
+                      <Text style={[styles.selectCategoryText, { color: colors.text }]}>{formCategory}</Text>
                       <Icon name="chevron-down" size={18} color="#64748B" />
                     </TouchableOpacity>
                   </View>
@@ -1329,7 +1350,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 <View style={styles.interestDecisionRow}>
                   <TouchableOpacity
                     style={[
-                      styles.interestBtn,
+                      styles.interestBtn, { backgroundColor: colors.surface, borderColor: colors.border },
                       formInterestStatus === 'YES' && styles.interestBtnYesActive,
                     ]}
                     onPress={() => setFormInterestStatus('YES')}
@@ -1343,7 +1364,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                     />
                     <Text
                       style={[
-                        styles.interestBtnText,
+                        styles.interestBtnText, { color: colors.textSecondary },
                         formInterestStatus === 'YES' && styles.interestBtnTextYes,
                       ]}
                     >
@@ -1353,7 +1374,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 
                   <TouchableOpacity
                     style={[
-                      styles.interestBtn,
+                      styles.interestBtn, { backgroundColor: colors.surface, borderColor: colors.border },
                       formInterestStatus === 'NO' && styles.interestBtnNoActive,
                     ]}
                     onPress={() => setFormInterestStatus('NO')}
@@ -1367,7 +1388,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                     />
                     <Text
                       style={[
-                        styles.interestBtnText,
+                        styles.interestBtnText, { color: colors.textSecondary },
                         formInterestStatus === 'NO' && styles.interestBtnTextNo,
                       ]}
                     >
@@ -1528,6 +1549,103 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           </View>
         </Modal>
       )}
+
+      {/* Visit Record Audit Detail Modal */}
+      <Modal
+        visible={!!selectedVisitDetail}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedVisitDetail(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.visitDetailModalCard}>
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <Text style={styles.modalTitle} numberOfLines={1}>{selectedVisitDetail?.shopName}</Text>
+                <Text style={styles.modalSubtitle}>
+                  Ref: VIS-{(selectedVisitDetail?.id || '').slice(-6).toUpperCase()} • Category: {selectedVisitDetail?.category || 'General'}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setSelectedVisitDetail(null)}>
+                <Icon name="close" size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 440, marginVertical: 12 }}>
+              {selectedVisitDetail?.photoUrl ? (
+                <Image
+                  source={{ uri: selectedVisitDetail.photoUrl }}
+                  style={{ width: '100%', height: 180, borderRadius: 10, marginBottom: 12 }}
+                  resizeMode="cover"
+                />
+              ) : null}
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Merchant Interest:</Text>
+                <Text style={[styles.detailValue, { color: selectedVisitDetail?.isInterested ? '#16A34A' : '#DC2626', fontWeight: '700' }]}>
+                  {selectedVisitDetail?.isInterested ? 'YES (Interested in Onboarding)' : 'NO (Declined)'}
+                </Text>
+              </View>
+
+              {selectedVisitDetail?.reasonNotInterested ? (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Reason / Remarks:</Text>
+                  <Text style={styles.detailValue}>{selectedVisitDetail.reasonNotInterested}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Field Representative:</Text>
+                <Text style={styles.detailValue}>{selectedVisitDetail?.managerName} ({selectedVisitDetail?.managerRole})</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Territory & PIN:</Text>
+                <Text style={styles.detailValue}>{selectedVisitDetail?.location} - {selectedVisitDetail?.pincode}</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Timestamp:</Text>
+                <Text style={styles.detailValue}>{selectedVisitDetail?.timestamp}</Text>
+              </View>
+
+              {selectedVisitDetail?.gpsCoords ? (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>GPS Coordinates:</Text>
+                  <Text style={styles.detailValue}>{selectedVisitDetail.gpsCoords}</Text>
+                </View>
+              ) : null}
+
+              {selectedVisitDetail?.voiceNoteDuration ? (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Audio Voice Note:</Text>
+                  <Text style={styles.detailValue}>Recorded ({selectedVisitDetail.voiceNoteDuration} seconds)</Text>
+                </View>
+              ) : null}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+              <TouchableOpacity
+                style={[styles.pdfReportBtn, { flex: 1, justifyContent: 'center' }]}
+                onPress={() => {
+                  if (selectedVisitDetail) {
+                    handleExportPDF(selectedVisitDetail);
+                  }
+                }}
+              >
+                <Icon name="file-pdf-box" size={18} color="#DC2626" />
+                <Text style={styles.pdfReportBtnText}>Download PDF</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: theme.colors.primary, borderRadius: 8, height: 42, justifyContent: 'center', alignItems: 'center' }}
+                onPress={() => setSelectedVisitDetail(null)}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -2314,5 +2432,159 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
+  },
+  primaryCategorySwitcher: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 12,
+    gap: 6,
+  },
+  primaryCategoryTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  primaryCategoryTabActive: {
+    backgroundColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  primaryCategoryTabText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  primaryCategoryTabTextActive: {
+    color: '#FFFFFF',
+  },
+  teamReportCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  teamReportIdBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  teamReportIdText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: theme.colors.primary,
+  },
+  statusBadgeGreen: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  statusBadgeGreenText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  teamReportDateText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  teamReportSummaryText: {
+    fontSize: 13,
+    color: '#1E293B',
+    lineHeight: 18,
+    marginVertical: 4,
+  },
+  teamReportMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  voiceAttachedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    gap: 4,
+  },
+  voiceAttachedPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#2563EB',
+  },
+  viewDetailBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 6,
+    gap: 4,
+  },
+  viewDetailBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.primary,
+  },
+  refIdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 2,
+  },
+  refIdText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  categoryPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#0284C7',
+    marginLeft: 4,
+  },
+  visitDetailModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    width: '92%',
+    maxHeight: '85%',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  detailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    flex: 1,
+  },
+  detailValue: {
+    fontSize: 12,
+    color: '#0F172A',
+    flex: 1.5,
+    textAlign: 'right',
   },
 });

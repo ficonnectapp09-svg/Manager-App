@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { DailyReport, DailyReportVendorVisited, Vendor } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
@@ -53,6 +54,7 @@ export const DailyReportScreen: React.FC<DailyReportScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const dateInfo = getFormattedCurrentDate();
 
@@ -286,7 +288,7 @@ export const DailyReportScreen: React.FC<DailyReportScreenProps> = ({
   // Already submitted today
   if (existingReport && !isSubmittedSuccess) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
         <FICHeader
           title="Daily Report"

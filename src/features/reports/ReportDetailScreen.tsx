@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { services } from '../../services';
+import { useTheme } from '../../hooks/useTheme';
 import { DailyReport } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICCard } from '../../components/ui/FICCard';
@@ -30,6 +31,7 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
   onBack,
   onOpenDrawer,
 }) => {
+  const { colors, isDark } = useTheme();
   const [report, setReport] = useState<DailyReport | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +77,7 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Report Details"
@@ -101,14 +103,14 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
 
         {/* Section 1: Today's Work */}
         <FICCard style={styles.card}>
-          <Text style={styles.sectionTitle}>Today's Work Summary</Text>
-          <Text style={styles.bodyText}>{report.workSummary}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Work Summary</Text>
+          <Text style={[styles.bodyText, { color: colors.textSecondary }]}>{report.workSummary}</Text>
         </FICCard>
 
         {/* Section: Voice Memo Audio Playback */}
         {report.voiceUrl ? (
           <FICCard style={styles.card}>
-            <Text style={styles.sectionTitle}>Voice Memo Attachment</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Voice Memo Attachment</Text>
             <View style={styles.audioPlayerBox}>
               <View style={styles.playIconCircle}>
                 <Text style={{ fontSize: 18, color: '#FFFFFF' }}>▶</Text>
@@ -124,7 +126,7 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
         {/* Section: Attached Storefront Photos */}
         {report.photo1Url || report.photo2Url ? (
           <FICCard style={styles.card}>
-            <Text style={styles.sectionTitle}>Storefront Photos</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Storefront Photos</Text>
             <View style={styles.photoAttachmentsRow}>
               {report.photo1Url && (
                 <View style={styles.photoCard}>
@@ -144,7 +146,7 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
 
         {/* Section 2: Vendors Visited */}
         <FICCard style={styles.card}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Vendors Visited ({report.shopsVisitedCount || (report.vendorsVisited ? report.vendorsVisited.length : 0)})
           </Text>
           {!report.vendorsVisited || report.vendorsVisited.length === 0 ? (
@@ -154,7 +156,7 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
               {report.vendorsVisited.map(v => (
                 <View key={v.vendorId} style={styles.vendorCard}>
                   <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={styles.vendorName}>{v.vendorName}</Text>
+                    <Text style={[styles.vendorName, { color: colors.text }]}>{v.vendorName}</Text>
                     {v.location ? (
                       <Text style={styles.vendorLoc} numberOfLines={1}>
                         📍 {v.location}
@@ -186,7 +188,7 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
         {/* Section 3: Issues / Follow-ups */}
         {report.issuesFollowUp ? (
           <FICCard style={styles.card}>
-            <Text style={styles.sectionTitle}>Issues / Follow-ups</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Issues / Follow-ups</Text>
             <Text style={styles.bodyText}>{report.issuesFollowUp}</Text>
           </FICCard>
         ) : null}
@@ -194,7 +196,7 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
         {/* Section 4: Additional Notes */}
         {report.additionalNotes ? (
           <FICCard style={styles.card}>
-            <Text style={styles.sectionTitle}>Additional Notes</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Notes</Text>
             <Text style={styles.bodyText}>{report.additionalNotes}</Text>
           </FICCard>
         ) : null}

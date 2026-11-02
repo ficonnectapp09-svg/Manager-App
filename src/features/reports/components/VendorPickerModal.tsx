@@ -14,6 +14,7 @@ import { Vendor } from '../../../types';
 import { FICTextInput } from '../../../components/ui/FICTextInput';
 import { FICButton } from '../../../components/ui/FICButton';
 import { FICLoadingState } from '../../../components/feedback/FICLoadingState';
+import { useTheme } from '../../../hooks/useTheme';
 
 export interface VendorPickerModalProps {
   visible: boolean;
@@ -28,6 +29,7 @@ export const VendorPickerModal: React.FC<VendorPickerModalProps> = ({
   onSelectVendor,
   onClose,
 }) => {
+  const { colors, isDark } = useTheme();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);

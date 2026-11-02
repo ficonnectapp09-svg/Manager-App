@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface DropdownOption {
   label: string;
@@ -33,6 +34,8 @@ export const FICDropdownModal: React.FC<FICDropdownModalProps> = ({
   onSelect,
   onClose,
 }) => {
+  const { colors, isDark } = useTheme();
+
   const normalizedOptions: DropdownOption[] = options.map(opt =>
     typeof opt === 'string' ? { label: opt, value: opt } : opt
   );
@@ -47,13 +50,34 @@ export const FICDropdownModal: React.FC<FICDropdownModalProps> = ({
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={styles.contentContainer}>
-              <View style={styles.header}>
-                <View style={styles.dragHandle} />
+            <View
+              style={[
+                styles.contentContainer,
+                {
+                  backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+                  borderTopWidth: isDark ? 1 : 0,
+                  borderTopColor: colors.border,
+                },
+              ]}
+            >
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View
+                  style={[
+                    styles.dragHandle,
+                    { backgroundColor: isDark ? colors.border : '#CBD5E1' },
+                  ]}
+                />
                 <View style={styles.titleRow}>
-                  <Text style={styles.title}>{title}</Text>
-                  <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Icon name="close" size={20} color="#64748B" />
+                  <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                  <TouchableOpacity
+                    onPress={onClose}
+                    style={[
+                      styles.closeBtn,
+                      { backgroundColor: isDark ? colors.surface : '#F8FAFC' },
+                    ]}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Icon name="close" size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -66,7 +90,11 @@ export const FICDropdownModal: React.FC<FICDropdownModalProps> = ({
                       key={item.value}
                       style={[
                         styles.optionRow,
-                        isSelected && styles.optionRowSelected,
+                        { backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF' },
+                        isSelected && [
+                          styles.optionRowSelected,
+                          { backgroundColor: isDark ? colors.surface : '#EFF6FF' },
+                        ],
                       ]}
                       activeOpacity={0.7}
                       onPress={() => {
@@ -75,15 +103,23 @@ export const FICDropdownModal: React.FC<FICDropdownModalProps> = ({
                       }}
                     >
                       <View style={styles.optionTextCol}>
-                        <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
+                        <Text
+                          style={[
+                            styles.optionLabel,
+                            { color: colors.text },
+                            isSelected && { color: colors.primary, fontWeight: '700' },
+                          ]}
+                        >
                           {item.label}
                         </Text>
                         {item.subtitle ? (
-                          <Text style={styles.optionSubtitle}>{item.subtitle}</Text>
+                          <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>
+                            {item.subtitle}
+                          </Text>
                         ) : null}
                       </View>
                       {isSelected && (
-                        <Icon name="check-circle" size={20} color="#2563EB" />
+                        <Icon name="check-circle" size={20} color={colors.primary} />
                       )}
                     </TouchableOpacity>
                   );
@@ -100,18 +136,17 @@ export const FICDropdownModal: React.FC<FICDropdownModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
     justifyContent: 'flex-end',
   },
   contentContainer: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',
     paddingBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 20,
   },
@@ -120,14 +155,12 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
     alignItems: 'center',
   },
   dragHandle: {
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#CBD5E1',
     marginBottom: 12,
   },
   titleRow: {
@@ -139,12 +172,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#0F172A',
   },
   closeBtn: {
     padding: 4,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
   },
   optionsList: {
     paddingHorizontal: 16,
@@ -158,11 +189,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     marginVertical: 3,
-    backgroundColor: '#FFFFFF',
   },
-  optionRowSelected: {
-    backgroundColor: '#EFF6FF',
-  },
+  optionRowSelected: {},
   optionTextCol: {
     flex: 1,
     marginRight: 12,
@@ -170,15 +198,9 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#334155',
-  },
-  optionLabelSelected: {
-    fontWeight: '700',
-    color: '#1D4ED8',
   },
   optionSubtitle: {
     fontSize: 12,
-    color: '#64748B',
     marginTop: 2,
   },
 });

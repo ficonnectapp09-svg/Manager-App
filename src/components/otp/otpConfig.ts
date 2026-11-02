@@ -1,25 +1,27 @@
 import { Easing } from 'react-native';
 
-export const OTP_CONFIG = {
-  // Geometry
-  BOX_SIZE: 44,
-  BOX_RADIUS: 12,
-  BOX_GAP: 14,
-  ORBIT_RADIUS: 45,
-  CENTER_SQUARE_SIZE: 40,
-  CARD_RADIUS: 28,
-  CARET_WIDTH: 1.5,
-  CARET_HEIGHT: 20,
-
-  // Perimeter for rounded rect (44x44, rx=12):
-  // 2*(w-2r) + 2*(h-2r) + 2*PI*r = 40 + 40 + 75.398 = 155.398
-  BOX_PERIMETER: 155.398,
-  get ARC_LENGTH() {
-    return this.BOX_PERIMETER * 0.25; // 25% of perimeter
-  },
-
-  // Colors adapted to FIC Manager App design system
-  COLORS: {
+export const getOtpColors = (isDark: boolean) => {
+  if (isDark) {
+    return {
+      bgPage: '#0B1220',
+      bgCard: '#172235',
+      bgBox: '#111827',
+      borderNeutral: '#334155',
+      borderActive: '#38BDF8',
+      textPrimary: '#F8FAFC',
+      textMuted: '#94A3B8',
+      textPhone: '#38BDF8',
+      accentEmerald: '#22C55E',
+      accentGlow: '#4ADE80',
+      accentFill: 'rgba(34, 197, 94, 0.15)',
+      orbitTrack: 'rgba(56, 189, 248, 0.25)',
+      centerDot: 'rgba(56, 189, 248, 0.8)',
+      dragHandle: '#334155',
+      errorRed: '#EF4444',
+      errorGlow: 'rgba(239, 68, 68, 0.25)',
+    };
+  }
+  return {
     bgPage: '#F8FAFC',
     bgCard: '#FFFFFF',
     bgBox: '#F1F5F9',
@@ -36,7 +38,26 @@ export const OTP_CONFIG = {
     dragHandle: '#E2E8F0',
     errorRed: '#DC2626',
     errorGlow: 'rgba(220, 38, 38, 0.25)',
+  };
+};
+
+export const OTP_CONFIG = {
+  // Geometry
+  BOX_SIZE: 44,
+  BOX_RADIUS: 12,
+  BOX_GAP: 14,
+  ORBIT_RADIUS: 45,
+  CENTER_SQUARE_SIZE: 40,
+  CARD_RADIUS: 28,
+  CARET_WIDTH: 1.5,
+  CARET_HEIGHT: 20,
+
+  BOX_PERIMETER: 155.398,
+  get ARC_LENGTH() {
+    return this.BOX_PERIMETER * 0.25;
   },
+
+  COLORS: getOtpColors(false),
 
   // Timings (ms)
   TIMINGS: {
@@ -58,10 +79,9 @@ export const OTP_CONFIG = {
 
   // Easings
   EASINGS: {
-    gather: Easing.inOut(Easing.cubic),
-    spin: Easing.out(Easing.cubic),
-    collapse: Easing.inOut(Easing.cubic),
-    success: Easing.out(Easing.cubic),
-    pop: Easing.out(Easing.back(1.5)),
+    SPRING_SMOOTH: Easing.bezier(0.25, 0.1, 0.25, 1),
+    SPRING_BOUNCY: Easing.bezier(0.34, 1.56, 0.64, 1),
+    ACCEL: Easing.bezier(0.4, 0, 1, 1),
+    DECEL: Easing.bezier(0, 0, 0.2, 1),
   },
-} as const;
+};

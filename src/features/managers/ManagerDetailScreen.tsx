@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import { services } from '../../services';
+import { useTheme } from '../../hooks/useTheme';
 import { Manager } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICCard } from '../../components/ui/FICCard';
@@ -31,6 +32,7 @@ export const ManagerDetailScreen: React.FC<ManagerDetailScreenProps> = ({
   onBack,
   onOpenDrawer,
 }) => {
+  const { colors, isDark } = useTheme();
   const [manager, setManager] = useState<Manager | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +94,7 @@ export const ManagerDetailScreen: React.FC<ManagerDetailScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Manager Profile"
@@ -108,8 +110,8 @@ export const ManagerDetailScreen: React.FC<ManagerDetailScreenProps> = ({
           <View style={styles.profileHeader}>
             <FICAvatar name={manager.name} size={64} />
             <View style={styles.profileHeaderText}>
-              <Text style={styles.name}>{manager.name}</Text>
-              <Text style={styles.empId}>Employee ID: {manager.employeeId}</Text>
+              <Text style={[styles.name, { color: colors.text }]}>{manager.name}</Text>
+              <Text style={[styles.empId, { color: colors.textMuted }]}>Employee ID: {manager.employeeId}</Text>
               <View style={styles.badgesRow}>
                 <View style={styles.roleChip}>
                   <Text style={styles.roleText}>{manager.role}</Text>
@@ -136,35 +138,35 @@ export const ManagerDetailScreen: React.FC<ManagerDetailScreenProps> = ({
 
         {/* Territory Scope Card */}
         <FICCard style={styles.card}>
-          <Text style={styles.sectionTitle}>Territory Scope</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Territory:</Text>
-            <Text style={styles.infoValue}>📍 {manager.territoryName}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Territory Scope</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Territory:</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>📍 {manager.territoryName}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>State Scope:</Text>
-            <Text style={styles.infoValue}>{manager.stateId}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>State Scope:</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.stateId}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>District Scope:</Text>
-            <Text style={styles.infoValue}>{manager.districtId || 'All Districts'}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>District Scope:</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.districtId || 'All Districts'}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Division Scope:</Text>
-            <Text style={styles.infoValue}>{manager.divisionName || manager.divisionId || 'All Divisions'}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Division Scope:</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.divisionName || manager.divisionId || 'All Divisions'}</Text>
           </View>
         </FICCard>
 
         {/* Contact Information */}
         <FICCard style={styles.card}>
-          <Text style={styles.sectionTitle}>Contact Directives</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Mobile Number:</Text>
-            <Text style={styles.infoValue}>{manager.phone}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Directives</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Mobile Number:</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.phone}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Corporate Email:</Text>
-            <Text style={styles.infoValue}>{manager.email}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Corporate Email:</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{manager.email}</Text>
           </View>
 
           <View style={styles.contactActions}>

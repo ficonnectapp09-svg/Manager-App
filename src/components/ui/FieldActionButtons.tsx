@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import { googleMapsLocationService } from '../../services/maps';
 
 export interface FieldActionButtonsProps {
@@ -78,6 +79,7 @@ export const FieldActionButtons: React.FC<FieldActionButtonsProps> = ({
   onCallInitiated,
   onNavigateInitiated,
 }) => {
+  const { colors, isDark } = useTheme();
   const phoneStatus = validatePhoneNumber(phoneNumber);
   const locationStatus = validateCoordinates(latitude, longitude);
 
@@ -116,8 +118,8 @@ export const FieldActionButtons: React.FC<FieldActionButtonsProps> = ({
         <TouchableOpacity
           style={[
             styles.actionButton,
-            styles.callButton,
-            !phoneStatus.valid && styles.disabledButton,
+            styles.callButton, isDark && { backgroundColor: 'rgba(56, 189, 248, 0.12)', borderColor: 'rgba(56, 189, 248, 0.35)' },
+            !phoneStatus.valid && styles.disabledButton, isDark && { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
             !showNavigate && { flex: 1 },
           ]}
           onPress={handleCall}
@@ -134,7 +136,7 @@ export const FieldActionButtons: React.FC<FieldActionButtonsProps> = ({
           <Text
             style={[
               styles.buttonText,
-              styles.callButtonText,
+              styles.callButtonText, isDark && { color: colors.primary },
               !phoneStatus.valid && styles.disabledButtonText,
             ]}
           >
@@ -148,7 +150,7 @@ export const FieldActionButtons: React.FC<FieldActionButtonsProps> = ({
         <TouchableOpacity
           style={[
             styles.actionButton,
-            styles.navigateButton,
+            styles.navigateButton, isDark && { backgroundColor: 'rgba(34, 197, 94, 0.12)', borderColor: 'rgba(34, 197, 94, 0.35)' },
             !locationStatus.valid && styles.disabledButton,
             !showCall && { flex: 1 },
           ]}
@@ -166,7 +168,7 @@ export const FieldActionButtons: React.FC<FieldActionButtonsProps> = ({
           <Text
             style={[
               styles.buttonText,
-              styles.navigateButtonText,
+              styles.navigateButtonText, isDark && { color: colors.success },
               !locationStatus.valid && styles.disabledButtonText,
             ]}
           >
@@ -179,7 +181,7 @@ export const FieldActionButtons: React.FC<FieldActionButtonsProps> = ({
 
   if (showContainerCard) {
     return (
-      <View style={[styles.cardContainer, style]}>
+      <View style={[styles.cardContainer, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>
         {(titleOrLabel || subtitle || address) && (
           <View style={styles.headerInfo}>
             {titleOrLabel ? <Text style={styles.cardTitle}>{titleOrLabel}</Text> : null}

@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { Manager, ManagerRole, Vendor } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
@@ -41,6 +42,7 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
   onNavigateRoute,
   onSelectManager,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager: authManager } = useAuth();
 
   // State variables
@@ -460,7 +462,7 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
   const territoryScopeText = authManager?.territoryName || 'Tamil Nadu (Whole State)';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       {/* Header */}
@@ -613,12 +615,12 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
 
             {/* Search Input Bar + Filter Trigger Button */}
             <View style={styles.searchRow}>
-              <View style={styles.searchInputContainer}>
+              <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Icon name="magnify" size={20} color="#94A3B8" style={styles.searchIcon} />
                 <TextInput
-                  style={styles.searchInput}
+                  style={[styles.searchInput, { color: colors.text }]}
                   placeholder="Search by name, ID, phone..."
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
@@ -813,13 +815,13 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
           else if (item.role === ManagerRole.PINCODE_MANAGER) sectorLabel = '1 Pincode';
 
           return (
-            <FICCard style={isSelf ? [styles.managerCard, styles.selfManagerCard] : styles.managerCard}>
+            <FICCard style={isSelf ? [styles.managerCard, { backgroundColor: colors.surface, borderColor: colors.border }, styles.selfManagerCard] : styles.managerCard}>
               {/* Header Row */}
               <View style={styles.cardHeaderRow}>
                 <FICAvatar name={item.name} size={44} />
                 <View style={styles.cardMainContent}>
                   <View style={styles.nameRow}>
-                    <Text style={styles.managerName} numberOfLines={1}>
+                    <Text style={[styles.managerName, { color: colors.text }]} numberOfLines={1}>
                       {item.name}
                     </Text>
                     {isSelf && (
@@ -928,11 +930,11 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
         onRequestClose={() => setIsFilterModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.filterModalCard}>
+          <View style={[styles.filterModalCard, { backgroundColor: colors.surfaceElevated }]}>
             {/* Modal Header */}
             <View style={styles.modalHeaderRow}>
               <View style={{ flex: 1, paddingRight: 10 }}>
-                <Text style={styles.modalTitle}>Hierarchy Filter Options</Text>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Hierarchy Filter Options</Text>
                 <Text style={styles.modalSubtitle}>
                   State Portal ({territoryScopeText}) • Select from Dropdowns
                 </Text>
@@ -949,7 +951,7 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
             <View style={styles.modalFormField}>
               <View style={styles.fieldLabelRow}>
                 <Icon name="map" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.fieldLabel}>State (Fixed Jurisdiction)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>State (Fixed Jurisdiction)</Text>
                 <View style={styles.fixedBadge}>
                   <Icon name="lock" size={11} color="#64748B" />
                   <Text style={styles.fixedBadgeText}>Fixed</Text>
@@ -965,7 +967,7 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
             <View style={styles.modalFormField}>
               <View style={styles.fieldLabelRow}>
                 <Icon name="bank" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {isDistrictFixed ? 'District (Fixed Jurisdiction)' : 'Select District (State Level)'}
                 </Text>
                 {isDistrictFixed && (
@@ -1002,7 +1004,7 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
             <View style={styles.modalFormField}>
               <View style={styles.fieldLabelRow}>
                 <Icon name="layers-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {isDivisionFixed ? 'Division (Fixed Jurisdiction)' : 'Select Division (Within District)'}
                 </Text>
                 {isDivisionFixed && (
@@ -1039,7 +1041,7 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
             <View style={styles.modalFormField}>
               <View style={styles.fieldLabelRow}>
                 <Icon name="map-marker-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   {isPincodeFixed ? 'Pincode (Fixed Jurisdiction)' : 'Enter Pincode (Type to Search Locality)'}
                 </Text>
                 {isPincodeFixed && (
@@ -1076,8 +1078,8 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
 
             {/* Modal Actions */}
             <View style={styles.modalActionButtonsRow}>
-              <TouchableOpacity style={styles.modalResetBtn} onPress={handleResetFilters}>
-                <Text style={styles.modalResetBtnText}>Reset All</Text>
+              <TouchableOpacity style={[styles.modalResetBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handleResetFilters}>
+                <Text style={[styles.modalResetBtnText, { color: colors.text }]}>Reset All</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalApplyBtn} onPress={handleApplyFilters}>
                 <Text style={styles.modalApplyBtnText}>Apply Filters</Text>
@@ -1120,7 +1122,7 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
         onRequestClose={() => setIsStoresModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.storesModalCard}>
+          <View style={[styles.storesModalCard, { backgroundColor: colors.surfaceElevated }]}>
             {/* Header */}
             <View style={styles.modalHeaderRow}>
               <View>
@@ -1143,10 +1145,10 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
             <ScrollView style={styles.storesListScroll} showsVerticalScrollIndicator={false}>
               {selectedManagerForStores && getStoresForManager(selectedManagerForStores).length > 0 ? (
                 getStoresForManager(selectedManagerForStores).map(store => (
-                  <View key={store.id} style={styles.storeCardItem}>
+                  <View key={store.id} style={[styles.storeCardItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.storeCardTop}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.storeBusinessName}>{store.businessName}</Text>
+                        <Text style={[styles.storeBusinessName, { color: colors.text }]}>{store.businessName}</Text>
                         <Text style={styles.storeCategoryText}>
                           {store.category} • {store.subcategory || store.businessType}
                         </Text>
@@ -1156,7 +1158,7 @@ export const FieldManagersScreen: React.FC<FieldManagersScreenProps> = ({
                       </View>
                     </View>
 
-                    <Text style={styles.storeAddressText}>
+                    <Text style={[styles.storeAddressText, { color: colors.textMuted }]}>
                       📍 {store.address || 'Address registered on file'}
                     </Text>
 

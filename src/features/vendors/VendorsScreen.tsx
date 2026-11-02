@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { Vendor, VendorStatus } from '../../types';
 import { VendorFilterOptions } from '../../services/repositories/IVendorRepository';
@@ -56,6 +57,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [allVendors, setAllVendors] = useState<Vendor[]>([]);
@@ -160,6 +162,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
   }, [fetchVendors]);
 
   useEffect(() => {
+    const unsubEntity = socketService.subscribe<Vendor>('vendor', () => fetchVendors(true));
     const unsub = socketService.subscribe<Vendor>('vendor.updated', (payload) => {
       if (payload.data) {
         setVendors((prev) =>
@@ -174,6 +177,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
       fetchVendors(true);
     });
     return () => {
+      unsubEntity();
       unsub();
       unsubReconnect();
     };
@@ -236,7 +240,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Vendors"
@@ -248,8 +252,8 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
         {/* TITLE & ADD VENDOR ROW */}
         <View style={styles.titleRow}>
           <View style={styles.titleTextCol}>
-            <Text style={styles.pageTitle}>Vendors</Text>
-            <Text style={styles.pageSubtitle}>
+            <Text style={[styles.pageTitle, { color: colors.text }]}>Vendors</Text>
+            <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
               Manage and view all vendors in your territory
             </Text>
           </View>
@@ -266,12 +270,12 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
 
         {/* SEARCH & FILTER ROW */}
         <View style={styles.searchFilterRow}>
-          <View style={styles.searchInputContainer}>
+          <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Icon name="magnify" size={20} color="#94A3B8" style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.text }]}
               placeholder="Search vendors by name, category, location..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
@@ -284,7 +288,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
           </View>
 
           <TouchableOpacity
-            style={[styles.filterButton, isFilterActive && styles.filterButtonActive]}
+            style={[styles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }, isFilterActive && styles.filterButtonActive]}
             activeOpacity={0.7}
             onPress={() => setShowFilterModal(true)}
             accessibilityLabel="Filter Vendors"
@@ -352,7 +356,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
             <TouchableOpacity
               style={[
                 styles.chip,
-                selectedCategory !== 'ALL' ? styles.chipSelected : styles.chipUnselected,
+                selectedCategory !== 'ALL' ? styles.chipSelected : styles.chipUnselected, { backgroundColor: colors.surface, borderColor: colors.border },
                 styles.dropdownChip,
               ]}
               activeOpacity={0.7}
@@ -428,12 +432,12 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
         <TouchableWithoutFeedback onPress={() => setShowFilterModal(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View style={styles.filterModalContent}>
-                <View style={styles.filterModalHeader}>
+              <View style={[styles.filterModalContent, { backgroundColor: colors.surfaceElevated }]}>
+                <View style={[styles.filterModalHeader, { borderBottomColor: colors.border }]}>
                   <View style={styles.modalDragHandle} />
                   <View style={styles.filterTitleRow}>
-                    <Text style={styles.filterModalTitle}>Filter & Sort Vendors</Text>
-                    <TouchableOpacity onPress={() => setShowFilterModal(false)} style={styles.closeIconBtn}>
+                    <Text style={[styles.filterModalTitle, { color: colors.text }]}>Filter & Sort Vendors</Text>
+                    <TouchableOpacity onPress={() => setShowFilterModal(false)} style={[styles.closeIconBtn, isDark && { backgroundColor: colors.surface }]}>
                       <Icon name="close" size={20} color="#64748B" />
                     </TouchableOpacity>
                   </View>
@@ -441,7 +445,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
 
                 <ScrollView style={styles.filterModalBody} showsVerticalScrollIndicator={false}>
                   {/* Status Section */}
-                  <Text style={styles.filterSectionTitle}>Vendor Status</Text>
+                  <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Vendor Status</Text>
                   <View style={styles.filterGrid}>
                     {[
                       { label: 'All', value: 'ALL' },
@@ -452,14 +456,14 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
                       <TouchableOpacity
                         key={st.value}
                         style={[
-                          styles.modalChip,
+                          styles.modalChip, { backgroundColor: colors.surface, borderColor: colors.border },
                           selectedFilter === st.value && styles.modalChipSelected,
                         ]}
                         onPress={() => setSelectedFilter(st.value as FilterChipType)}
                       >
                         <Text
                           style={[
-                            styles.modalChipText,
+                            styles.modalChipText, { color: colors.textSecondary },
                             selectedFilter === st.value && styles.modalChipTextSelected,
                           ]}
                         >
@@ -470,7 +474,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
                   </View>
 
                   {/* Category Section */}
-                  <Text style={styles.filterSectionTitle}>Category</Text>
+                  <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Category</Text>
                   <View style={styles.filterGrid}>
                     {CATEGORIES.map(cat => {
                       const catVal = cat === 'All Categories' ? 'ALL' : cat;
@@ -490,7 +494,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
                   </View>
 
                   {/* Sort By Section */}
-                  <Text style={styles.filterSectionTitle}>Sort By</Text>
+                  <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Sort By</Text>
                   {[
                     { label: 'Default (Recent)', value: 'DEFAULT' },
                     { label: 'Business Name (A to Z)', value: 'NAME_ASC' },
@@ -501,10 +505,10 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
                     return (
                       <TouchableOpacity
                         key={sortOpt.value}
-                        style={[styles.sortRow, isSel && styles.sortRowSelected]}
+                        style={[styles.sortRow, { backgroundColor: colors.surface }, isSel && styles.sortRowSelected]}
                         onPress={() => setSortBy(sortOpt.value as SortByType)}
                       >
-                        <Text style={[styles.sortLabel, isSel && styles.sortLabelSelected]}>
+                        <Text style={[styles.sortLabel, { color: colors.text }, isSel && styles.sortLabelSelected]}>
                           {sortOpt.label}
                         </Text>
                         <Icon
@@ -518,12 +522,12 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
                 </ScrollView>
 
                 {/* Footer Buttons */}
-                <View style={styles.filterModalFooter}>
+                <View style={[styles.filterModalFooter, { borderTopColor: colors.border }]}>
                   <TouchableOpacity
-                    style={styles.resetButton}
+                    style={[styles.resetButton, { borderColor: colors.border }]}
                     onPress={handleResetFilters}
                   >
-                    <Text style={styles.resetButtonText}>Reset All</Text>
+                    <Text style={[styles.resetButtonText, { color: colors.textMuted }]}>Reset All</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.applyButton}

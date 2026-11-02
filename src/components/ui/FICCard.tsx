@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp, TouchableOpacity, TouchableOpacityProps } from 'react-native';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface FICCardProps {
   children: React.ReactNode;
@@ -9,25 +10,34 @@ export interface FICCardProps {
 }
 
 export const FICCard: React.FC<FICCardProps> = ({ children, style, onPress }) => {
+  const { colors, theme: activeTheme } = useTheme();
+
+  const cardDynamicStyle = [
+    styles.card,
+    {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      ...activeTheme.elevation.card,
+    },
+    style,
+  ];
+
   if (onPress) {
     return (
-      <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={[styles.card, style]}>
+      <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={cardDynamicStyle}>
         {children}
       </TouchableOpacity>
     );
   }
 
-  return <View style={[styles.card, style]}>{children}</View>;
+  return <View style={cardDynamicStyle}>{children}</View>;
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.elevation.card,
   },
 });

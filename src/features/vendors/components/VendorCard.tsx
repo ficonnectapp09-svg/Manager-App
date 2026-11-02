@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Vendor, VendorStatus } from '../../../types';
+import { useTheme } from '../../../hooks/useTheme';
 
 export interface VendorCardProps {
   vendor: Vendor;
@@ -16,6 +17,7 @@ const getVendorInitials = (name?: string): string => {
 };
 
 export const VendorCard: React.FC<VendorCardProps> = ({ vendor, onPress }) => {
+  const { colors, isDark } = useTheme();
   const getStatusBadge = () => {
     switch (vendor.status) {
       case VendorStatus.NOT_INTERESTED:
@@ -66,7 +68,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({ vendor, onPress }) => {
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
       activeOpacity={0.7}
       onPress={onPress ? () => onPress(vendor) : undefined}
     >
@@ -78,9 +80,9 @@ export const VendorCard: React.FC<VendorCardProps> = ({ vendor, onPress }) => {
           resizeMode="cover"
         />
       ) : (
-        <View style={[styles.storeImage, styles.avatarPlaceholder]}>
+        <View style={[styles.storeImage, styles.avatarPlaceholder, isDark && { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
           <Icon name="storefront-outline" size={18} color="#2563EB" style={{ marginBottom: 1 }} />
-          <Text style={styles.avatarInitials} numberOfLines={1}>
+          <Text style={[styles.avatarInitials, isDark && { color: colors.primary }]} numberOfLines={1}>
             {getVendorInitials(vendor.businessName || vendor.name)}
           </Text>
         </View>
@@ -88,17 +90,17 @@ export const VendorCard: React.FC<VendorCardProps> = ({ vendor, onPress }) => {
 
       {/* Center Details */}
       <View style={styles.centerDetails}>
-        <Text style={styles.businessName} numberOfLines={1}>
+        <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
           {vendor.businessName}
         </Text>
 
-        <Text style={styles.categoryText} numberOfLines={1}>
+        <Text style={[styles.categoryText, { color: colors.textMuted }]} numberOfLines={1}>
           {vendor.businessType || 'Retail'} • {vendor.subcategory || vendor.category}
         </Text>
 
         <View style={styles.locationRow}>
           <Icon name="map-marker-outline" size={13} color="#64748B" style={styles.metaIcon} />
-          <Text style={styles.locationText} numberOfLines={1}>
+          <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
             {vendor.locationDistrict || vendor.address || 'Field Location'}
           </Text>
         </View>
@@ -106,7 +108,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({ vendor, onPress }) => {
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Icon name="storefront-outline" size={13} color="#64748B" style={styles.metaIcon} />
-            <Text style={styles.statText}>{vendor.outletCount || 1} Outlets</Text>
+            <Text style={[styles.statText, { color: colors.textMuted }]}>{vendor.outletCount || 1} Outlets</Text>
           </View>
 
           <View style={styles.statItem}>

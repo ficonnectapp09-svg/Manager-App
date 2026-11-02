@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, Image } from 'react-native';
 import { theme } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import { FICIconButton } from './FICIconButton';
 import { ASSETS } from '../../assets/logo';
 
@@ -25,8 +26,20 @@ export const FICHeader: React.FC<FICHeaderProps> = ({
   style,
   showLogo = false,
 }) => {
+  const { colors, isDark } = useTheme();
+
   return (
-    <View style={[styles.header, style]}>
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: isDark ? colors.surfaceElevated : colors.primary,
+          borderBottomWidth: isDark ? 1 : 0,
+          borderBottomColor: colors.border,
+        },
+        style,
+      ]}
+    >
       {leftActionIcon ? (
         <FICIconButton icon={leftActionIcon} onPress={onLeftAction} size={40} />
       ) : (
@@ -34,7 +47,7 @@ export const FICHeader: React.FC<FICHeaderProps> = ({
       )}
       <View style={styles.titleContainer}>
         <View style={styles.titleTextCol}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={[styles.title, { color: '#FFFFFF' }]} numberOfLines={1}>
             {title}
           </Text>
           {subtitle ? (
@@ -56,7 +69,6 @@ export const FICHeader: React.FC<FICHeaderProps> = ({
 const styles = StyleSheet.create({
   header: {
     height: theme.spacing.headerHeight,
-    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -87,7 +99,6 @@ const styles = StyleSheet.create({
   },
   title: {
     ...theme.typography.title,
-    color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -99,6 +110,6 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 40,
+    height: 40,
   },
 });
-

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { services } from '../../services';
 import { LeaderboardEntry, ManagerRole } from '../../types';
 import { LeaderboardPeriod } from '../../services/repositories/ILeaderboardRepository';
@@ -108,7 +109,9 @@ const PINCODE_OPTIONS = [
 
 export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
   onOpenDrawer,
+  onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState<LeaderboardPeriod>('THIS_MONTH');
   const [rawEntries, setRawEntries] = useState<LeaderboardEntry[]>([]);
@@ -375,48 +378,71 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
     // Only render podium pedestal if there are at least 3 performers
     if (filteredEntries.length < 3) return null;
 
+    const rank1 = topThree[0];
+    const rank2 = topThree[1];
+    const rank3 = topThree[2];
+
+    // Podium Alignment (Module 8): 2nd (Left, Silver), 1st (Center, Elevated Gold), 3rd (Right, Bronze)
+    const podiumList = [
+      {
+        item: rank2,
+        rank: 2,
+        label: '🥈 2nd',
+        badgeStyle: styles.badgeSecond,
+        borderStyle: styles.topCardBorderSecond,
+        isFirst: false,
+        elevatedStyle: { minHeight: 155, transform: [{ translateY: 8 }] },
+      },
+      {
+        item: rank1,
+        rank: 1,
+        label: '👑 1st',
+        badgeStyle: styles.badgeFirst,
+        borderStyle: styles.topCardBorderFirst,
+        isFirst: true,
+        elevatedStyle: [styles.topCardFirstElevated, { backgroundColor: isDark ? colors.surfaceElevated : '#FFFEFA' }],
+      },
+      {
+        item: rank3,
+        rank: 3,
+        label: '🥉 3rd',
+        badgeStyle: styles.badgeThird,
+        borderStyle: styles.topCardBorderThird,
+        isFirst: false,
+        elevatedStyle: { minHeight: 140, transform: [{ translateY: 16 }] },
+      },
+    ];
+
     return (
       <View style={styles.topThreeContainer}>
-        <Text style={styles.sectionHeaderTitle}>Top Performers</Text>
+        <Text style={styles.sectionHeaderTitle}>Top Performers Podium</Text>
         <View style={styles.topThreeRow}>
-          {topThree.map(item => {
-            const isFirst = item.rank === 1;
-            const isSecond = item.rank === 2;
-
-            let borderStyle = styles.topCardBorderNormal;
-            let badgeStyle = styles.badgeNormal;
-            if (isFirst) {
-              borderStyle = styles.topCardBorderFirst;
-              badgeStyle = styles.badgeFirst;
-            } else if (isSecond) {
-              borderStyle = styles.topCardBorderSecond;
-              badgeStyle = styles.badgeSecond;
-            } else {
-              borderStyle = styles.topCardBorderThird;
-              badgeStyle = styles.badgeThird;
-            }
-
+          {podiumList.map(({ item, rank, label, badgeStyle, borderStyle, isFirst, elevatedStyle }) => {
             return (
               <View
                 key={item.managerId}
-                style={[
+                style={[[
                   styles.topCard,
                   borderStyle,
-                  isFirst && styles.topCardFirstElevated,
-                ]}
+                  elevatedStyle,
+                  isFirst && { zIndex: 10, elevation: 4 },
+                ], { backgroundColor: colors.surface }]}
               >
                 <View style={[styles.badge, badgeStyle]}>
-                  <Text style={styles.badgeText}>{formatTopBadge(item.rank)}</Text>
+                  <Text style={[styles.badgeText, { color: colors.text }]}>{label}</Text>
                 </View>
-                <FICAvatar name={item.managerName} size={40} />
-                <Text style={styles.topManagerName} numberOfLines={1}>
+                <FICAvatar name={item.managerName} size={isFirst ? 46 : 38} />
+                <Text style={[styles.topManagerName, isFirst && { fontSize: 13, fontWeight: '800' }]} numberOfLines={1}>
                   {item.managerName}
                 </Text>
-                <Text style={styles.topManagerSub} numberOfLines={1}>
+                <Text style={[styles.topManagerSub, { color: colors.textMuted }]} numberOfLines={1}>
                   {item.territoryName || item.role}
                 </Text>
-                <Text style={styles.topMetricText}>
+                <Text style={[styles.topMetricText, isFirst && { color: '#B45309' }]}>
                   {item.activitiesCount ?? item.vendorsOnboarded} activities
+                </Text>
+                <Text style={[styles.topMetricText, { color: isFirst ? '#D97706' : '#64748B', fontWeight: '800' }]}>
+                  {item.score} pts
                 </Text>
               </View>
             );
@@ -436,15 +462,15 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
     return (
       <View
         style={[
-          styles.rankItemRow,
-          isCurrentUser && styles.rankItemRowHighlight,
+          styles.rankItemRow, { backgroundColor: colors.surface, borderColor: colors.border },
+          isCurrentUser && styles.rankItemRowHighlight, { backgroundColor: colors.surfaceElevated, borderColor: colors.primary },
         ]}
       >
-        <Text style={styles.rankNumberText}>{formattedRank}</Text>
+        <Text style={[styles.rankNumberText, { color: colors.textMuted }]}>{formattedRank}</Text>
         <FICAvatar name={item.managerName} size={38} />
         <View style={styles.rankItemContent}>
           <View style={styles.rankItemNameRow}>
-            <Text style={styles.rankItemName} numberOfLines={1}>
+            <Text style={[styles.rankItemName, { color: colors.text }]} numberOfLines={1}>
               {item.managerName}
             </Text>
             {isCurrentUser && (
@@ -617,7 +643,7 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Leaderboard"
@@ -663,10 +689,10 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
         onRequestClose={() => setIsFilterModalOpen(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.filterModalCard}>
+          <View style={[styles.filterModalCard, { backgroundColor: colors.surfaceElevated }]}>
             {/* Header */}
             <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Hierarchy Filter Options</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Hierarchy Filter Options</Text>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
                 onPress={() => setIsFilterModalOpen(false)}
@@ -680,11 +706,11 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
               {/* 1. STATE DROPDOWN */}
               <Text style={styles.filterFieldLabel}>State</Text>
               <TouchableOpacity
-                style={styles.dropdownSelectorBtn}
+                style={[styles.dropdownSelectorBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setShowStatePicker(true)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.dropdownSelectorText}>
+                <Text style={[styles.dropdownSelectorText, { color: colors.text }]}>
                   {getStateLabel(draftState)}
                 </Text>
                 <Icon name="chevron-down" size={20} color="#64748B" />
@@ -693,11 +719,11 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
               {/* 2. DISTRICT DROPDOWN */}
               <Text style={styles.filterFieldLabel}>District</Text>
               <TouchableOpacity
-                style={styles.dropdownSelectorBtn}
+                style={[styles.dropdownSelectorBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setShowDistrictPicker(true)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.dropdownSelectorText}>
+                <Text style={[styles.dropdownSelectorText, { color: colors.text }]}>
                   {getDistrictLabel(draftDistrict)}
                 </Text>
                 <Icon name="chevron-down" size={20} color="#64748B" />
@@ -706,11 +732,11 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
               {/* 3. DIVISION DROPDOWN */}
               <Text style={styles.filterFieldLabel}>Division</Text>
               <TouchableOpacity
-                style={styles.dropdownSelectorBtn}
+                style={[styles.dropdownSelectorBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setShowDivisionPicker(true)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.dropdownSelectorText}>
+                <Text style={[styles.dropdownSelectorText, { color: colors.text }]}>
                   {getDivisionLabel(draftDivision)}
                 </Text>
                 <Icon name="chevron-down" size={20} color="#64748B" />
@@ -724,7 +750,7 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
                 </TouchableOpacity>
               </View>
               <TextInput
-                style={styles.pincodeInput}
+                style={[styles.pincodeInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                 placeholder="e.g. 600001 or select from list"
                 placeholderTextColor="#94A3B8"
                 keyboardType="numeric"
@@ -737,10 +763,10 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
             {/* Action Buttons */}
             <View style={styles.modalBtnRow}>
               <TouchableOpacity
-                style={styles.modalResetBtn}
+                style={[styles.modalResetBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={handleResetFilters}
               >
-                <Text style={styles.modalResetBtnText}>Reset All</Text>
+                <Text style={[styles.modalResetBtnText, { color: colors.textMuted }]}>Reset All</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalApplyBtn}
@@ -1053,7 +1079,9 @@ const styles = StyleSheet.create({
   },
   topCardFirstElevated: {
     paddingVertical: 14,
-    transform: [{ translateY: -4 }],
+    minHeight: 175,
+    transform: [{ translateY: -8 }],
+    backgroundColor: '#FFFEFA',
   },
   topCardBorderFirst: {
     borderColor: '#D4AF37',

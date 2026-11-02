@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { useLanguage } from '../../context/LanguageContext';
 import { services } from '../../services';
 import { AppNotification } from '../../types';
@@ -69,6 +70,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
+  const { colors, isDark } = useTheme();
   const { manager } = useAuth();
   const { t } = useLanguage();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -168,7 +170,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   const sections = groupNotifications(filteredNotifications);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title={t('header_notifications', 'Notifications')}
@@ -228,7 +230,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
           )}
           renderSectionHeader={({ section: { title } }) => (
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionHeaderText}>{title}</Text>
+              <Text style={[styles.sectionHeaderText, { color: colors.textMuted }]}>{title}</Text>
             </View>
           )}
           contentContainerStyle={styles.listContent}
