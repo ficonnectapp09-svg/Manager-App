@@ -24,8 +24,8 @@ All notable changes to the FIC Manager Application repository will be documented
 ## [1.2.0] - Shared Backend Integration & Synchronization
 
 ### Added
-- Authoritative backend integration pointing to shared Manager Website backend at `http://3.110.88.42:8005/api`.
-- Native React Native WebSocket client on `ws://3.110.88.42:8005/ws` with polling fallback to `/api/realtime/events`.
+- Authoritative backend integration pointing to shared Manager Website backend at `https://connect-manager.onrender.com/api`.
+- Native React Native WebSocket client on `wss://connect-manager.onrender.com/ws` with polling fallback to `/api/realtime/events`.
 - Real phone OTP generation and verification through `POST /api/auth/send-otp` and `POST /api/auth/verify-otp`.
 - Real authenticated session resolution through `GET /api/auth/me`.
 
@@ -41,7 +41,7 @@ All notable changes to the FIC Manager Application repository will be documented
   - Audits: `/api/audit-logs`
   - Media Uploads: `/api/uploads/photo`
 - Removed all inline mock data fallbacks, fake manager generation, and silent mock repository delegates across all feature paths.
-- Updated `ENV.apiBaseUrl` in `src/constants/env.ts` and `.env` to `http://3.110.88.42:8005/api`.
+- Updated `ENV.apiBaseUrl` in `src/constants/env.ts` and `.env` to `https://connect-manager.onrender.com/api`.
 
 ### Preserved
 - **Protected Website**: `D:\Connect App Project\Website\Manager` remains 100% untouched.

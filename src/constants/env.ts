@@ -16,7 +16,7 @@ export interface AppEnvironment {
 // Development configuration placeholder (Base URL from environment / default)
 export const ENV: AppEnvironment = {
   envName: 'development',
-  apiBaseUrl: 'http://3.110.88.42:8005/api',
+  apiBaseUrl: 'https://connect-manager.onrender.com/api',
   googleMapsApiKey: 'AIzaSyA_DemoGoogleMapsApiKeyForForgeIndia2026',
   mongoDbAtlasUri: '',
   enableAnalytics: false,

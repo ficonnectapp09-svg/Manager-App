@@ -189,6 +189,7 @@ export class ApiClient {
   private getCandidateBaseUrls(): string[] {
     const urls = [this.baseUrl];
     const devFallbacks = [
+      'https://connect-manager.onrender.com/api',
       'http://10.0.2.2:8005/api',
       'http://localhost:8005/api',
     ];

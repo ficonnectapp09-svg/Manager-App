@@ -127,9 +127,9 @@ Before concluding any task:
 ## 6. Shared Backend Integration & Synchronization Specifications
 
 ### 6.1 Authoritative Backend Environment
-- **Authoritative Shared Backend Base URL**: `http://3.110.88.42:8005/api`
-- **Realtime WebSocket Bus**: `ws://3.110.88.42:8005/ws?token=<JWT>`
-- **Realtime Event Polling Fallback**: `http://3.110.88.42:8005/api/realtime/events?since=<timestamp>&token=<JWT>`
+- **Authoritative Shared Backend Base URL**: `https://connect-manager.onrender.com/api`
+- **Realtime WebSocket Bus**: `wss://connect-manager.onrender.com/ws?token=<JWT>`
+- **Realtime Event Polling Fallback**: `https://connect-manager.onrender.com/api/realtime/events?since=<timestamp>&token=<JWT>`
 - **Manager Website Location (Read-Only Reference)**: `D:\Connect App Project\Website\Manager`
 
 ### 6.2 Verified Route Map
@@ -154,8 +154,8 @@ Before concluding any task:
 | Shop Visits | `/api/shop-visits` | POST / GET |
 
 ### 6.3 Exact Files Modified for Backend Integration
-1. `src/constants/env.ts`: `apiBaseUrl` set to `http://3.110.88.42:8005/api`, `useMockData: false`.
-2. `.env`: `API_BASE_URL=http://3.110.88.42:8005/api`, `SOCKET_URL=ws://3.110.88.42:8005/ws`.
+1. `src/constants/env.ts`: `apiBaseUrl` set to `https://connect-manager.onrender.com/api`, `useMockData: false`.
+2. `.env`: `API_BASE_URL=https://connect-manager.onrender.com/api`, `SOCKET_URL=wss://connect-manager.onrender.com/ws`.
 3. `.env.example`: Aligned configuration template.
 4. `src/services/api/ApiClient.ts`: Cleaned fallback URLs, supported backend data envelope unpacking (`tasks`, `vendors`, `user`, `stats`).
 5. `src/services/auth/HttpAuthService.ts`: Real login with `{ identifier, password }`, profile fetch from `/auth/me`, OTP login support, zero mock fallback.
@@ -173,11 +173,11 @@ Before concluding any task:
 17. `src/services/repositories/http/HttpVendorRepository.ts`: Routed shop visits to `/shop-visits`.
 18. `src/services/repositories/http/HttpActivityRepository.ts`: Routed activity feeds to `/audit-logs` and `/reports/submitted`.
 19. `src/services/uploads/HttpMediaUploadService.ts`: Routed storefront photo uploads to `/uploads/photo`.
-20. `src/services/realtime/SocketService.ts`: Native WebSocket client connected to `ws://3.110.88.42:8005/ws` with polling fallback to `/api/realtime/events`.
+20. `src/services/realtime/SocketService.ts`: Native WebSocket client connected to `wss://connect-manager.onrender.com/ws` with polling fallback to `/api/realtime/events`.
 
 ### 6.4 Regression Test Results
 - `npm run typecheck`: **PASSED** (0 errors, exit code 0).
-- Backend Endpoint Connectivity: **CONFIRMED** (`http://3.110.88.42:8005/api` active and responsive).
+- Backend Endpoint Connectivity: **CONFIRMED** (`https://connect-manager.onrender.com/api` active and responsive).
 - Website & Backend Code Integrity: **100% UNTOUCHED** (0 files modified in `Website/Manager`).
 
 ---
