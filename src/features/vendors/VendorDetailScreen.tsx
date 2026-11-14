@@ -26,6 +26,7 @@ import { FieldActionButtons } from '../../components/ui/FieldActionButtons';
 import { socketService } from '../../services/realtime/SocketService';
 import { VENDOR_ASSETS } from '../../assets/vendors';
 import { maskGSTIN, maskPAN, maskBankAccount } from '../../utils/masking';
+import { resolveImageUrl } from '../../utils/mediaUtils';
 
 export interface VendorDetailScreenProps {
   vendorId?: string;
@@ -216,7 +217,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
   const statusInfo = getStatusBadge();
 
   const getVendorValidPhotoUri = (): string | null => {
-    return (
+    const raw = (
       vendor.shopPhotoUrl ||
       vendor.logoUrl ||
       (vendor as any).photoUrl ||
@@ -225,6 +226,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
       (Array.isArray((vendor as any).documents) && (vendor as any).documents[0]?.url) ||
       null
     );
+    return resolveImageUrl(raw) || null;
   };
 
   const validPhotoUri = getVendorValidPhotoUri();
@@ -496,7 +498,9 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                   <View style={styles.gridCol}>
                     <Text style={[styles.gridLabel, { color: colors.textMuted }]}>Assigned Manager</Text>
                     <Text style={[styles.gridValue, { color: colors.text }]}>
-                      {vendor.assignedManager ||
+                      {(typeof vendor.assignedManager === 'string'
+                        ? vendor.assignedManager
+                        : (vendor.assignedManager as any)?.name) ||
                         (manager
                           ? `${manager.name} (${manager.role.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())})`
                           : 'Assigned Manager')}
@@ -574,7 +578,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <View style={styles.kycDocPreviewBox}>
                       {vendor.aadhaarUrl ? (
                         <Image
-                          source={{ uri: vendor.aadhaarUrl }}
+                          source={{ uri: resolveImageUrl(vendor.aadhaarUrl) }}
                           style={styles.kycDocImage}
                           resizeMode="cover"
                         />
@@ -630,7 +634,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                     <View style={styles.kycDocPreviewBox}>
                       {vendor.panUrl ? (
                         <Image
-                          source={{ uri: vendor.panUrl }}
+                          source={{ uri: resolveImageUrl(vendor.panUrl) }}
                           style={styles.kycDocImage}
                           resizeMode="cover"
                         />
@@ -1194,7 +1198,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
             <View style={[styles.previewModalBody, { backgroundColor: colors.surface }]}>
               {previewDocModal.imageUri ? (
                 <Image
-                  source={{ uri: previewDocModal.imageUri }}
+                  source={{ uri: resolveImageUrl(previewDocModal.imageUri) }}
                   style={styles.previewModalFullImage}
                   resizeMode="contain"
                 />

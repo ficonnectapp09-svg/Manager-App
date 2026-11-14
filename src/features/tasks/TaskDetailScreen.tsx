@@ -28,6 +28,7 @@ import { FICButton } from '../../components/ui/FICButton';
 import { FICTextInput } from '../../components/ui/FICTextInput';
 import { FICPriorityBadge } from '../../components/ui/FICPriorityBadge';
 import { FICStatusBadge } from '../../components/ui/FICStatusBadge';
+import { resolveImageUrl } from '../../utils/mediaUtils';
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
 import { FICErrorState } from '../../components/feedback/FICErrorState';
 import { FieldActionButtons } from '../../components/ui/FieldActionButtons';
@@ -638,7 +639,7 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
                       setFullImagePreviewTitle('Before Work Picture');
                     }}
                   >
-                    <Image source={{ uri: beforePhotoUrl }} style={styles.photoImage} resizeMode="cover" />
+                    <Image source={{ uri: resolveImageUrl(beforePhotoUrl) }} style={styles.photoImage} resizeMode="cover" />
                     <View style={styles.photoMetaOverlay}>
                       <Text style={styles.photoMetaTime} numberOfLines={1}>
                         🕒 {beforePhotoTimestamp || 'Real-time Captured'}
@@ -683,7 +684,7 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
                       setFullImagePreviewTitle('After Work Picture');
                     }}
                   >
-                    <Image source={{ uri: afterPhotoUrl }} style={styles.photoImage} resizeMode="cover" />
+                    <Image source={{ uri: resolveImageUrl(afterPhotoUrl) }} style={styles.photoImage} resizeMode="cover" />
                     <View style={styles.photoMetaOverlay}>
                       <Text style={styles.photoMetaTime} numberOfLines={1}>
                         🕒 {afterPhotoTimestamp || 'Real-time Captured'}
@@ -983,7 +984,7 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
                 </TouchableOpacity>
               </View>
               {fullImagePreviewUri ? (
-                <Image source={{ uri: fullImagePreviewUri }} style={styles.imageZoomFull} resizeMode="contain" />
+                <Image source={{ uri: resolveImageUrl(fullImagePreviewUri) }} style={styles.imageZoomFull} resizeMode="contain" />
               ) : null}
             </View>
           </View>

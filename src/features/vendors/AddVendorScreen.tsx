@@ -23,6 +23,7 @@ import { theme } from '../../theme';
 import { FICImageUploadModal } from '../../components/ui/FICImageUploadModal';
 import { FICAudioPlayerRecorder } from '../../components/ui/FICAudioPlayerRecorder';
 import { FICOperatingHoursModal } from '../../components/ui/FICOperatingHoursModal';
+import { resolveImageUrl } from '../../utils/mediaUtils';
 
 export interface AddVendorScreenProps {
   onBack: () => void;
@@ -712,7 +713,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                 <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Shop / Brand Logo</Text>
                 {logoImageUri ? (
                   <View style={styles.attachedImageCard}>
-                    <Image source={{ uri: logoImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
+                    <Image source={{ uri: resolveImageUrl(logoImageUri) }} style={styles.attachedThumbnail} resizeMode="cover" />
                     <View style={{ flex: 1, marginLeft: 12 }}>
                       <Text style={styles.attachedTitle} numberOfLines={1}>{logoFileName || 'Shop Logo Attached'}</Text>
                       <Text style={styles.attachedSub}>JPEG / PNG • Ready for verification</Text>
@@ -951,7 +952,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>PAN Card Document / Photo</Text>
             {panImageUri ? (
               <View style={styles.attachedImageCard}>
-                <Image source={{ uri: panImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
+                <Image source={{ uri: resolveImageUrl(panImageUri) }} style={styles.attachedThumbnail} resizeMode="cover" />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.attachedTitle} numberOfLines={1}>{panFileName || 'PAN Card Attached'}</Text>
                   <Text style={styles.attachedSub}>PAN Verification Document</Text>
@@ -988,7 +989,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Aadhaar Card Document / Photo</Text>
             {aadhaarImageUri ? (
               <View style={styles.attachedImageCard}>
-                <Image source={{ uri: aadhaarImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
+                <Image source={{ uri: resolveImageUrl(aadhaarImageUri) }} style={styles.attachedThumbnail} resizeMode="cover" />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.attachedTitle} numberOfLines={1}>{aadhaarFileName || 'Aadhaar Card Attached'}</Text>
                   <Text style={styles.attachedSub}>Aadhaar Verification Document</Text>
@@ -1064,7 +1065,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Business License / Document</Text>
             {licenseImageUri ? (
               <View style={styles.attachedImageCard}>
-                <Image source={{ uri: licenseImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
+                <Image source={{ uri: resolveImageUrl(licenseImageUri) }} style={styles.attachedThumbnail} resizeMode="cover" />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.attachedTitle} numberOfLines={1}>{licenseFileName || 'License Document Attached'}</Text>
                   <Text style={styles.attachedSub}>KYC Verification Document</Text>
@@ -1090,7 +1091,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Additional KYC Documents (PDF or Images, max 5MB)</Text>
             {kycImageUri ? (
               <View style={styles.attachedImageCard}>
-                <Image source={{ uri: kycImageUri }} style={styles.attachedThumbnail} resizeMode="cover" />
+                <Image source={{ uri: resolveImageUrl(kycImageUri) }} style={styles.attachedThumbnail} resizeMode="cover" />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.attachedTitle} numberOfLines={1}>{kycFileName || 'Statutory KYC Attached'}</Text>
                   <Text style={styles.attachedSub}>Tax Registration File</Text>

@@ -6,6 +6,7 @@ import { IVendorRepository, VendorFilterOptions } from '../IVendorRepository';
 import { Vendor, VendorCategory, VendorStatus } from '../../../types';
 import { apiClient } from '../../api/ApiClient';
 import { services } from '../../index';
+import { resolveImageUrl } from '../../../utils/mediaUtils';
 
 export class HttpVendorRepository implements IVendorRepository {
   private isVendorApprovedAndActive(v: any): boolean {
@@ -60,6 +61,25 @@ export class HttpVendorRepository implements IVendorRepository {
     else if (catStr.includes('JOB')) category = VendorCategory.JOBS;
     else if (catStr.includes('DAILY')) category = VendorCategory.DAILY_NEEDS;
 
+    const rawLogo = raw.logoUrl || raw.logo?.url || raw.logo || raw.avatar || raw.avatarUrl || '';
+    const rawPhoto = raw.shopPhotoUrl || raw.photo || raw.storefrontPhoto || raw.image || '';
+    const rawLicense = raw.licenseUrl || raw.businessLicense?.url || raw.businessLicense || '';
+    const rawKyc = raw.kycUrl || raw.kycDocument?.url || raw.kycDocument || '';
+    const rawPan = raw.panUrl || raw.panDocument?.url || raw.panDocument || '';
+    const rawAadhaar = raw.aadhaarUrl || raw.aadhaarDocument?.url || raw.aadhaarDocument || '';
+
+    const rawDocs: any[] = Array.isArray(raw.documents) ? raw.documents : (Array.isArray(raw.documentUrls) ? raw.documentUrls : []);
+    const documentUrls: string[] = rawDocs
+      .map(d => resolveImageUrl(typeof d === 'string' ? d : (d?.url || d?.secure_url || d?.file || '')))
+      .filter(Boolean);
+
+    const resolvedAssignedManager = typeof raw.assignedManager === 'string'
+      ? raw.assignedManager
+      : (raw.assignedManager?.name || raw.assignedManagerName || undefined);
+    const resolvedAssignedManagerId = typeof raw.assignedManagerId === 'string'
+      ? raw.assignedManagerId
+      : (raw.assignedManager?.id || raw.assignedManager?._id || undefined);
+
     return {
       ...raw,
       id,
@@ -75,6 +95,15 @@ export class HttpVendorRepository implements IVendorRepository {
       divisionId: raw.divisionId || '',
       pincodeId: raw.pincodeId || '',
       status,
+      assignedManager: resolvedAssignedManager,
+      assignedManagerId: resolvedAssignedManagerId,
+      logoUrl: resolveImageUrl(rawLogo) || undefined,
+      shopPhotoUrl: resolveImageUrl(rawPhoto) || undefined,
+      licenseUrl: resolveImageUrl(rawLicense) || undefined,
+      kycUrl: resolveImageUrl(rawKyc) || undefined,
+      panUrl: resolveImageUrl(rawPan) || undefined,
+      aadhaarUrl: resolveImageUrl(rawAadhaar) || undefined,
+      documentUrls: documentUrls.length > 0 ? documentUrls : undefined,
       outletCount: raw.outletCount ?? raw.outlets?.length ?? 1,
       issueCount: raw.issueCount ?? 0,
       visitCount: raw.visitCount ?? 0,

@@ -139,7 +139,11 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ currentRoute, onNa
           },
         ]}
       >
-        <FICAvatar name={manager?.name || 'Manager'} size={48} />
+        <FICAvatar
+          name={manager?.name || 'Manager'}
+          sourceUrl={manager?.avatarUrl || manager?.profileImage}
+          size={48}
+        />
         <View style={styles.profileText}>
           <Text style={styles.name} numberOfLines={1}>
             {manager?.name || 'Manager'}

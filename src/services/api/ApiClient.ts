@@ -186,17 +186,15 @@ export class ApiClient {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
+  getServerUrl(): string {
+    return ENV.serverUrl;
+  }
+
   private getCandidateBaseUrls(): string[] {
-    const urls = [this.baseUrl];
-    const devFallbacks = [
-      'https://connect-manager.onrender.com/api',
-      'http://10.0.2.2:8005/api',
-      'http://localhost:8005/api',
-    ];
-    for (const fb of devFallbacks) {
-      if (!urls.includes(fb)) {
-        urls.push(fb);
-      }
+    const primary = this.baseUrl || ENV.apiBaseUrl;
+    const urls = [primary];
+    if (!urls.includes(ENV.apiBaseUrl)) {
+      urls.push(ENV.apiBaseUrl);
     }
     return urls;
   }
@@ -226,10 +224,7 @@ export class ApiClient {
       try {
         const result = await new Promise<ApiResponseEnvelope<T>>((resolve, reject) => {
           if (typeof XMLHttpRequest === 'undefined') {
-            return resolve({
-              data: { url: 'https://cdn.example.com/uploads/sample.jpg' } as any,
-              status: 200,
-            });
+            return reject(new Error('XMLHttpRequest is not available for multipart file upload.'));
           }
           const xhr = new XMLHttpRequest();
           xhr.open(options.method || 'POST', targetUrl, true);

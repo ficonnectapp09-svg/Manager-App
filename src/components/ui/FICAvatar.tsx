@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle, ImageStyle } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { resolveImageUrl } from '../../utils/mediaUtils';
 
 export interface FICAvatarProps {
   name: string;
@@ -25,7 +26,9 @@ export const FICAvatar: React.FC<FICAvatarProps> = ({
     return str.substring(0, 2).toUpperCase();
   };
 
-  if (sourceUrl) {
+  const resolvedUri = resolveImageUrl(sourceUrl);
+
+  if (resolvedUri) {
     const imageStyle: ImageStyle = {
       width: size,
       height: size,
@@ -33,7 +36,7 @@ export const FICAvatar: React.FC<FICAvatarProps> = ({
     };
     return (
       <Image
-        source={{ uri: sourceUrl }}
+        source={{ uri: resolvedUri }}
         style={[styles.avatar, { backgroundColor: colors.divider }, imageStyle]}
       />
     );

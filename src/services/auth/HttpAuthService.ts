@@ -6,6 +6,7 @@ import { Manager, ManagerRole } from '../../types';
 import { AuthLoginResult, IAuthService } from './AuthService';
 import { apiClient } from '../api/ApiClient';
 import { services } from '../index';
+import { resolveImageUrl } from '../../utils/mediaUtils';
 
 interface LoginApiResponse {
   success: boolean;
@@ -57,6 +58,10 @@ export class HttpAuthService implements IAuthService {
     const subAdminPhone = rawUser.assignedSubAdminPhone || rawUser.assignedAdminPhone || '+91 94432 10987';
     const subAdminEmail = rawUser.assignedSubAdminEmail || rawUser.assignedAdminEmail || `${(subAdminName || 'admin').toLowerCase().replace(/\s+/g, '')}@forgeconnect.in`;
 
+    const rawAvatar = rawUser.avatarUrl || rawUser.avatar || rawUser.profilePhoto || '';
+    const resolvedAvatar = resolveImageUrl(rawAvatar);
+    const resolvedSubAdminAvatar = rawUser.assignedSubAdminAvatar ? resolveImageUrl(rawUser.assignedSubAdminAvatar) : undefined;
+
     const supervisor = subAdminName ? {
       id: rawUser.assignedSubAdminId || 'subadmin-state-tn',
       name: subAdminName,
@@ -65,7 +70,7 @@ export class HttpAuthService implements IAuthService {
       phone: subAdminPhone,
       mobile: subAdminPhone,
       email: subAdminEmail,
-      avatarUrl: rawUser.assignedSubAdminAvatar || undefined,
+      avatarUrl: resolvedSubAdminAvatar,
     } : null;
 
     return {
@@ -84,9 +89,9 @@ export class HttpAuthService implements IAuthService {
       division: resolvedDivision,
       pincodeId: rawUser.pincodeId || resolvedPincode || '',
       pincode: resolvedPincode,
-      profileImage: rawUser.avatarUrl || rawUser.avatar || rawUser.profilePhoto || '',
-      avatarUrl: rawUser.avatarUrl || rawUser.avatar || rawUser.profilePhoto || '',
-      avatar: rawUser.avatarUrl || rawUser.avatar || rawUser.profilePhoto || '',
+      profileImage: resolvedAvatar,
+      avatarUrl: resolvedAvatar,
+      avatar: resolvedAvatar,
       employeeId: rawUser.managerId || rawUser.employeeId || 'MGR-STA-20261023-5542',
       territoryName: resolvedDivision || resolvedDistrict || resolvedState || 'Territory',
       status: String(rawUser.status || '').toLowerCase() === 'active' ? 'ACTIVE' : 'INACTIVE',
@@ -105,7 +110,7 @@ export class HttpAuthService implements IAuthService {
       assignedSubAdminRole: subAdminRole || undefined,
       assignedSubAdminPhone: subAdminPhone || undefined,
       assignedSubAdminEmail: subAdminEmail || undefined,
-      assignedSubAdminAvatar: rawUser.assignedSubAdminAvatar || undefined,
+      assignedSubAdminAvatar: resolvedSubAdminAvatar,
       supervisor,
       createdAt: rawUser.createdAt || new Date().toISOString(),
       updatedAt: rawUser.updatedAt || new Date().toISOString(),
@@ -128,7 +133,7 @@ export class HttpAuthService implements IAuthService {
           identifier: username.trim(),
           password,
         },
-        { timeoutMs: 10000 }
+        { timeoutMs: 30000 }
       );
 
       const token = response.token || (response as any).data?.token;
@@ -201,7 +206,7 @@ export class HttpAuthService implements IAuthService {
       const response = await apiClient.post<{ success: boolean; message: string; otp?: string }>(
         '/auth/send-otp',
         { mobile: mobile.trim() },
-        { timeoutMs: 10000 }
+        { timeoutMs: 30000 }
       );
       return {
         success: true,
@@ -221,7 +226,7 @@ export class HttpAuthService implements IAuthService {
       const response = await apiClient.post<LoginApiResponse>(
         '/auth/verify-otp',
         { mobile: mobile.trim(), otp: otp.trim() },
-        { timeoutMs: 10000 }
+        { timeoutMs: 30000 }
       );
 
       const token = response.token || (response as any).data?.token;

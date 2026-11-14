@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Vendor, VendorStatus } from '../../../types';
 import { useTheme } from '../../../hooks/useTheme';
+import { resolveImageUrl } from '../../../utils/mediaUtils';
 
 export interface VendorCardProps {
   vendor: Vendor;
@@ -55,7 +56,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({ vendor, onPress }) => {
   const statusInfo = getStatusBadge();
 
   // Pure backend / authenticated photo mapping (No stock image fallbacks)
-  const validPhotoUri =
+  const rawPhoto =
     vendor.shopPhotoUrl ||
     vendor.logoUrl ||
     (vendor as any).photoUrl ||
@@ -63,6 +64,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({ vendor, onPress }) => {
     (vendor as any).storefrontPhotoUri ||
     (Array.isArray((vendor as any).documents) && (vendor as any).documents[0]?.url) ||
     null;
+  const validPhotoUri = resolveImageUrl(rawPhoto);
 
   const hasIssues = (vendor.issueCount || 0) > 0;
 

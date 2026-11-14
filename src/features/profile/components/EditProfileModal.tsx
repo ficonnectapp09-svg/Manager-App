@@ -23,6 +23,7 @@ import { ENV } from '../../../constants/env';
 import { services } from '../../../services';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useTheme } from '../../../hooks/useTheme';
+import { resolveImageUrl } from '../../../utils/mediaUtils';
 
 export interface EditProfileModalProps {
   visible: boolean;
@@ -203,14 +204,24 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         type: 'image/jpeg',
       } as any);
 
-      // Upload via multipart endpoint (Module 11)
-      const res = await apiClient.uploadMultipart<any>('/auth/profile-photo', formData, token || undefined);
-
-      let newAvatarUrl = res?.data?.avatarUrl || (res as any)?.avatarUrl || uri;
-      if (typeof newAvatarUrl === 'string' && newAvatarUrl.startsWith('/')) {
-        const origin = ENV.apiBaseUrl.replace(/\/api\/?$/, '');
-        newAvatarUrl = `${origin}${newAvatarUrl}`;
+      // Multi-tier Cloudinary-backed upload pipeline aligned with Manager Website:
+      // 1. Try PUT /auth/profile-photo
+      // 2. If 404/405/rejected, fallback to POST /auth/profile-photo
+      // 3. If still fails, fallback to POST /auth/upload-avatar
+      let res: any = null;
+      try {
+        res = await apiClient.putMultipart<any>('/auth/profile-photo', formData, token || undefined);
+      } catch (putErr) {
+        try {
+          res = await apiClient.uploadMultipart<any>('/auth/profile-photo', formData, token || undefined);
+        } catch (postErr) {
+          res = await apiClient.uploadMultipart<any>('/auth/upload-avatar', formData, token || undefined);
+        }
       }
+
+      const raw = res?.data || res;
+      let newAvatarUrl = raw?.avatarUrl || raw?.url || raw?.file?.secure_url || raw?.file?.url || uri;
+      newAvatarUrl = resolveImageUrl(newAvatarUrl) || uri;
 
       setAvatarUri(newAvatarUrl);
       onUpdateManager({
@@ -229,7 +240,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         } catch {}
       }
 
-      Alert.alert('Photo Updated', 'Profile photo updated and synchronized successfully!');
+      Alert.alert('Photo Updated', 'Profile photo updated and synchronized with Cloudinary storage successfully!');
       onSuccess();
     } catch (err: any) {
       console.warn('Profile photo upload error:', err);

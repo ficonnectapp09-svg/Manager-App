@@ -28,6 +28,7 @@ import { services } from '../../services';
 import { cameraLocationService } from '../../services/camera/CameraLocationService';
 import { googleMapsLocationService } from '../../services/maps';
 import { reportExportService } from '../../services/reports/ReportExportService';
+import { resolveImageUrl } from '../../utils/mediaUtils';
 import { ExportResult } from '../../services/reports/IReportExportService';
 import { ManagerRole, VisitRecord, DailyReport } from '../../types';
 
@@ -899,7 +900,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <View style={styles.cardHeaderRow}>
                 {visitItem.photoUrl ? (
                   <Image
-                    source={{ uri: visitItem.photoUrl }}
+                    source={{ uri: resolveImageUrl(visitItem.photoUrl) }}
                     style={styles.cardShopImage}
                   />
                 ) : (
@@ -1262,7 +1263,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 
                 {formPhotoUri ? (
                   <View style={styles.storefrontPreviewContainer}>
-                    <Image source={{ uri: formPhotoUri }} style={styles.storefrontPreviewImage} resizeMode="cover" />
+                    <Image source={{ uri: resolveImageUrl(formPhotoUri) }} style={styles.storefrontPreviewImage} resizeMode="cover" />
                     <View style={styles.storefrontMetaRow}>
                       <View style={{ flex: 1, marginRight: 8 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -1574,7 +1575,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             <ScrollView style={{ maxHeight: 440, marginVertical: 12 }}>
               {selectedVisitDetail?.photoUrl ? (
                 <Image
-                  source={{ uri: selectedVisitDetail.photoUrl }}
+                  source={{ uri: resolveImageUrl(selectedVisitDetail.photoUrl) }}
                   style={{ width: '100%', height: 180, borderRadius: 10, marginBottom: 12 }}
                   resizeMode="cover"
                 />

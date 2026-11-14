@@ -210,7 +210,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             accessibilityLabel="User Profile"
             accessibilityRole="button"
           >
-            <FICAvatar name={managerDisplayName} size={36} />
+            <FICAvatar
+              name={managerDisplayName}
+              sourceUrl={manager?.avatarUrl || manager?.profileImage}
+              size={36}
+            />
           </TouchableOpacity>
         </View>
       </View>

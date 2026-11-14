@@ -4,7 +4,9 @@
 
 export interface AppEnvironment {
   envName: 'development' | 'staging' | 'production';
+  serverUrl: string;
   apiBaseUrl: string;
+  socketUrl: string;
   googleMapsApiKey: string;
   mongoDbAtlasUri: string;
   enableAnalytics: boolean;
@@ -13,10 +15,12 @@ export interface AppEnvironment {
   useMockData: boolean;
 }
 
-// Development configuration placeholder (Base URL from environment / default)
+// Authoritative production configuration aligned with Manager Website
 export const ENV: AppEnvironment = {
-  envName: 'development',
+  envName: 'production',
+  serverUrl: 'https://connect-manager.onrender.com',
   apiBaseUrl: 'https://connect-manager.onrender.com/api',
+  socketUrl: 'wss://connect-manager.onrender.com/ws',
   googleMapsApiKey: 'AIzaSyA_DemoGoogleMapsApiKeyForForgeIndia2026',
   mongoDbAtlasUri: '',
   enableAnalytics: false,

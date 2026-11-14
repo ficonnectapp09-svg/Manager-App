@@ -2,6 +2,7 @@ import { IManagerRepository, ManagerStatusFilter, TerritoryHierarchyItem } from 
 import { Manager, ManagerRole } from '../../../types';
 import { apiClient } from '../../api/ApiClient';
 import { services } from '../../index';
+import { resolveImageUrl } from '../../../utils/mediaUtils';
 
 export class HttpManagerRepository implements IManagerRepository {
   private normalizeManager(raw: any): Manager {
@@ -42,8 +43,8 @@ export class HttpManagerRepository implements IManagerRepository {
       division: divisionName,
       pincodeId: raw.pincodeId || pincode,
       pincode,
-      profileImage: raw.avatarUrl || raw.profilePhoto || '',
-      avatarUrl: raw.avatarUrl || raw.profilePhoto || '',
+      profileImage: resolveImageUrl(raw.avatarUrl || raw.profilePhoto || ''),
+      avatarUrl: resolveImageUrl(raw.avatarUrl || raw.profilePhoto || ''),
       employeeId: raw.managerId || raw.employeeId || 'MGR-000',
       territoryName,
       status: String(raw.status || 'active').toLowerCase() === 'active' ? 'ACTIVE' : 'INACTIVE',

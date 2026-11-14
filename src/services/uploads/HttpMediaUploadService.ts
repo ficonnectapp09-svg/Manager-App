@@ -1,6 +1,6 @@
 /**
  * HTTP Implementation of IMediaUploadService
- * Authoritative connection to backend S3 / Document uploads & Shop Visits
+ * Authoritative connection to backend Cloudinary-backed uploads & Shop Visits
  */
 import {
   IMediaUploadService,
