@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,429 +9,610 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ManagerRole } from '../../types';
 import { FICTextInput } from '../../components/ui/FICTextInput';
-import { useTheme } from '../../hooks/useTheme';
 import { FICButton } from '../../components/ui/FICButton';
-
-import { ENV } from '../../constants/env';
-import { apiClient } from '../../services/api/ApiClient';
+import { useTheme } from '../../hooks/useTheme';
+import { cameraLocationService } from '../../services/camera/CameraLocationService';
+import {
+  registrationApi,
+  TerritoryItem,
+  CapacityCheckResult,
+} from '../../services/api/registrationApi';
+import {
+  formatName,
+  validateName,
+  normalizeEmail,
+  validateEmail,
+  validateMobile,
+  validatePassword,
+  validatePasswordMatch,
+  validateAadhaar,
+  validatePan,
+  validateAccountNumber,
+  validateAccountNumberMatch,
+  validateIfsc,
+  validateDob,
+  validateLocationName,
+  validatePincode,
+} from '../../utils/validation';
 
 export interface RegisterScreenProps {
   onBackToLogin: () => void;
   onRegisterSuccess?: () => void;
 }
 
-interface TerritoryOption {
-  id: string;
-  name: string;
-}
-
 const ROLES = [
-  { label: 'State Manager (L1)', value: ManagerRole.STATE_MANAGER },
-  { label: 'District Manager (L2)', value: ManagerRole.DISTRICT_MANAGER },
-  { label: 'Division Manager (L3)', value: ManagerRole.DIVISION_MANAGER },
-  { label: 'Pincode Manager (L4)', value: ManagerRole.PINCODE_MANAGER },
+  { label: 'State Manager (L1)', value: ManagerRole.STATE_MANAGER, backendRole: 'state_manager' },
+  { label: 'District Manager (L2)', value: ManagerRole.DISTRICT_MANAGER, backendRole: 'district_manager' },
+  { label: 'Division Manager (L3)', value: ManagerRole.DIVISION_MANAGER, backendRole: 'division_manager' },
+  { label: 'Pincode Manager (L4)', value: ManagerRole.PINCODE_MANAGER, backendRole: 'pincode_manager' },
 ];
 
-const STATES: TerritoryOption[] = [
-  { id: 'st-tn-01', name: 'Tamil Nadu' },
-  { id: 'st-mh-01', name: 'Maharashtra' },
-  { id: 'st-ka-01', name: 'Karnataka' },
-  { id: 'st-kl-01', name: 'Kerala' },
-  { id: 'st-ap-01', name: 'Andhra Pradesh' },
-  { id: 'st-ts-01', name: 'Telangana' },
-  { id: 'st-gj-01', name: 'Gujarat' },
-  { id: 'st-up-01', name: 'Uttar Pradesh' },
-  { id: 'st-mp-01', name: 'Madhya Pradesh' },
-  { id: 'st-rj-01', name: 'Rajasthan' },
-  { id: 'st-wb-01', name: 'West Bengal' },
-  { id: 'st-dl-01', name: 'Delhi (NCT)' },
-  { id: 'st-pb-01', name: 'Punjab' },
-  { id: 'st-hr-01', name: 'Haryana' },
-  { id: 'st-br-01', name: 'Bihar' },
-  { id: 'st-od-01', name: 'Odisha' },
-  { id: 'st-as-01', name: 'Assam' },
-  { id: 'st-jh-01', name: 'Jharkhand' },
-  { id: 'st-cg-01', name: 'Chhattisgarh' },
-  { id: 'st-uk-01', name: 'Uttarakhand' },
-  { id: 'st-hp-01', name: 'Himachal Pradesh' },
-  { id: 'st-jk-01', name: 'Jammu & Kashmir' },
-  { id: 'st-goa-01', name: 'Goa' },
-  { id: 'st-py-01', name: 'Puducherry' },
-  { id: 'st-ch-01', name: 'Chandigarh' },
-  { id: 'st-tr-01', name: 'Tripura' },
-  { id: 'st-ml-01', name: 'Meghalaya' },
-  { id: 'st-mn-01', name: 'Manipur' },
-  { id: 'st-nl-01', name: 'Nagaland' },
-  { id: 'st-mz-01', name: 'Mizoram' },
-  { id: 'st-ar-01', name: 'Arunachal Pradesh' },
-  { id: 'st-sk-01', name: 'Sikkim' },
-  { id: 'st-ld-01', name: 'Ladakh' },
-  { id: 'st-an-01', name: 'Andaman & Nicobar Islands' },
-  { id: 'st-dh-01', name: 'Dadra & Nagar Haveli and Daman & Diu' },
+const STEP_TITLES = [
+  'Role & Territory',
+  'Personal Profile',
+  'Residential Address',
+  'KYC Documents',
+  'Bank & Review',
 ];
-
-const DISTRICTS_MAP: Record<string, TerritoryOption[]> = {
-  'st-tn-01': [
-    { id: 'dt-chn-01', name: 'Chennai' },
-    { id: 'dt-cbe-01', name: 'Coimbatore' },
-    { id: 'dt-dharm-01', name: 'Dharmapuri' },
-    { id: 'dt-salem-01', name: 'Salem' },
-    { id: 'dt-mdu-01', name: 'Madurai' },
-    { id: 'dt-trichy-01', name: 'Tiruchirappalli' },
-    { id: 'dt-tpr-01', name: 'Tiruppur' },
-    { id: 'dt-erode-01', name: 'Erode' },
-    { id: 'dt-vellore-01', name: 'Vellore' },
-    { id: 'dt-tvl-01', name: 'Tirunelveli' },
-    { id: 'dt-kanch-01', name: 'Kanchipuram' },
-    { id: 'dt-thanj-01', name: 'Thanjavur' },
-    { id: 'dt-dgl-01', name: 'Dindigul' },
-    { id: 'dt-cudd-01', name: 'Cuddalore' },
-    { id: 'dt-karur-01', name: 'Karur' },
-    { id: 'dt-nam-01', name: 'Namakkal' },
-    { id: 'dt-krish-01', name: 'Krishnagiri' },
-    { id: 'dt-theni-01', name: 'Theni' },
-    { id: 'dt-vnr-01', name: 'Virudhunagar' },
-    { id: 'dt-tut-01', name: 'Thoothukudi' },
-    { id: 'dt-ram-01', name: 'Ramanathapuram' },
-    { id: 'dt-svg-01', name: 'Sivaganga' },
-    { id: 'dt-pdk-01', name: 'Pudukkottai' },
-    { id: 'dt-ngt-01', name: 'Nagapattinam' },
-    { id: 'dt-tvr-01', name: 'Tiruvarur' },
-    { id: 'dt-may-01', name: 'Mayiladuthurai' },
-    { id: 'dt-ari-01', name: 'Ariyalur' },
-    { id: 'dt-per-01', name: 'Perambalur' },
-    { id: 'dt-tvm-01', name: 'Tiruvannamalai' },
-    { id: 'dt-kkl-01', name: 'Kallakurichi' },
-    { id: 'dt-vpm-01', name: 'Villupuram' },
-    { id: 'dt-rpt-01', name: 'Ranipet' },
-    { id: 'dt-tpt-01', name: 'Tirupattur' },
-    { id: 'dt-cgp-01', name: 'Chengalpattu' },
-    { id: 'dt-ten-01', name: 'Tenkasi' },
-    { id: 'dt-tvr2-01', name: 'Tiruvallur' },
-    { id: 'dt-kk-01', name: 'Kanyakumari' },
-    { id: 'dt-nil-01', name: 'Nilgiris' },
-  ],
-  'st-mh-01': [
-    { id: 'dt-mumbai-01', name: 'Mumbai City' },
-    { id: 'dt-mumbai-sub-01', name: 'Mumbai Suburban' },
-    { id: 'dt-pune-01', name: 'Pune' },
-    { id: 'dt-nagpur-01', name: 'Nagpur' },
-    { id: 'dt-thane-01', name: 'Thane' },
-    { id: 'dt-nashik-01', name: 'Nashik' },
-    { id: 'dt-aurangabad-01', name: 'Chhatrapati Sambhajinagar' },
-    { id: 'dt-solapur-01', name: 'Solapur' },
-    { id: 'dt-amravati-01', name: 'Amravati' },
-    { id: 'dt-kolhapur-01', name: 'Kolhapur' },
-    { id: 'dt-sangli-01', name: 'Sangli' },
-    { id: 'dt-satara-01', name: 'Satara' },
-    { id: 'dt-nanded-01', name: 'Nanded' },
-    { id: 'dt-jalgaon-01', name: 'Jalgaon' },
-  ],
-  'st-ka-01': [
-    { id: 'dt-blr-01', name: 'Bengaluru Urban' },
-    { id: 'dt-mys-01', name: 'Mysuru' },
-    { id: 'dt-mang-01', name: 'Mangaluru' },
-    { id: 'dt-belagavi-01', name: 'Belagavi' },
-    { id: 'dt-hubli-01', name: 'Hubballi-Dharwad' },
-    { id: 'dt-kalab-01', name: 'Kalaburagi' },
-    { id: 'dt-ballari-01', name: 'Ballari' },
-    { id: 'dt-vijaya-01', name: 'Vijayapura' },
-    { id: 'dt-shivam-01', name: 'Shivamogga' },
-    { id: 'dt-tumakuru-01', name: 'Tumakuru' },
-    { id: 'dt-udupi-01', name: 'Udupi' },
-    { id: 'dt-hassan-01', name: 'Hassan' },
-  ],
-  'st-kl-01': [
-    { id: 'dt-tvm-kl', name: 'Thiruvananthapuram' },
-    { id: 'dt-kochi-kl', name: 'Ernakulam (Kochi)' },
-    { id: 'dt-kozh-kl', name: 'Kozhikode' },
-    { id: 'dt-thrissur-kl', name: 'Thrissur' },
-    { id: 'dt-kollam-kl', name: 'Kollam' },
-    { id: 'dt-palakkad-kl', name: 'Palakkad' },
-    { id: 'dt-malappuram-kl', name: 'Malappuram' },
-    { id: 'dt-kannur-kl', name: 'Kannur' },
-    { id: 'dt-kottayam-kl', name: 'Kottayam' },
-    { id: 'dt-alappuzha-kl', name: 'Alappuzha' },
-  ],
-  'st-ap-01': [
-    { id: 'dt-vizag-ap', name: 'Visakhapatnam' },
-    { id: 'dt-vjw-ap', name: 'Vijayawada (NTR)' },
-    { id: 'dt-guntur-ap', name: 'Guntur' },
-    { id: 'dt-tirupati-ap', name: 'Tirupati' },
-    { id: 'dt-kurnool-ap', name: 'Kurnool' },
-    { id: 'dt-nellore-ap', name: 'Nellore' },
-    { id: 'dt-kakinada-ap', name: 'Kakinada' },
-  ],
-  'st-ts-01': [
-    { id: 'dt-hyd-ts', name: 'Hyderabad' },
-    { id: 'dt-warangal-ts', name: 'Warangal' },
-    { id: 'dt-rangareddy-ts', name: 'Rangareddy' },
-    { id: 'dt-medchal-ts', name: 'Medchal-Malkajgiri' },
-    { id: 'dt-karimnagar-ts', name: 'Karimnagar' },
-    { id: 'dt-nizamabad-ts', name: 'Nizamabad' },
-  ],
-  'st-gj-01': [
-    { id: 'dt-ahmedabad-gj', name: 'Ahmedabad' },
-    { id: 'dt-surat-gj', name: 'Surat' },
-    { id: 'dt-vadodara-gj', name: 'Vadodara' },
-    { id: 'dt-rajkot-gj', name: 'Rajkot' },
-    { id: 'dt-bhavnagar-gj', name: 'Bhavnagar' },
-    { id: 'dt-gandhinagar-gj', name: 'Gandhinagar' },
-  ],
-  'st-up-01': [
-    { id: 'dt-lucknow-up', name: 'Lucknow' },
-    { id: 'dt-kanpur-up', name: 'Kanpur Nagar' },
-    { id: 'dt-varanasi-up', name: 'Varanasi' },
-    { id: 'dt-agra-up', name: 'Agra' },
-    { id: 'dt-prayagraj-up', name: 'Prayagraj' },
-    { id: 'dt-noida-up', name: 'Noida (Gautam Buddha Nagar)' },
-    { id: 'dt-ghaziabad-up', name: 'Ghaziabad' },
-    { id: 'dt-meerut-up', name: 'Meerut' },
-  ],
-  'st-mp-01': [
-    { id: 'dt-indore-01', name: 'Indore' },
-    { id: 'dt-bhopal-01', name: 'Bhopal' },
-    { id: 'dt-gwl-01', name: 'Gwalior' },
-    { id: 'dt-jbp-01', name: 'Jabalpur' },
-    { id: 'dt-ujjain-01', name: 'Ujjain' },
-    { id: 'dt-sagar-01', name: 'Sagar' },
-    { id: 'dt-rewa-01', name: 'Rewa' },
-    { id: 'dt-satna-01', name: 'Satna' },
-    { id: 'dt-ratlam-01', name: 'Ratlam' },
-  ],
-  'st-rj-01': [
-    { id: 'dt-jaipur-rj', name: 'Jaipur' },
-    { id: 'dt-jodhpur-rj', name: 'Jodhpur' },
-    { id: 'dt-kota-rj', name: 'Kota' },
-    { id: 'dt-udaipur-rj', name: 'Udaipur' },
-    { id: 'dt-bikaner-rj', name: 'Bikaner' },
-    { id: 'dt-ajmer-rj', name: 'Ajmer' },
-  ],
-  'st-wb-01': [
-    { id: 'dt-kolkata-wb', name: 'Kolkata' },
-    { id: 'dt-howrah-wb', name: 'Howrah' },
-    { id: 'dt-n24p-wb', name: 'North 24 Parganas' },
-    { id: 'dt-s24p-wb', name: 'South 24 Parganas' },
-    { id: 'dt-darjeeling-wb', name: 'Darjeeling' },
-    { id: 'dt-siliguri-wb', name: 'Siliguri' },
-  ],
-  'st-dl-01': [
-    { id: 'dt-newdelhi-dl', name: 'New Delhi' },
-    { id: 'dt-central-dl', name: 'Central Delhi' },
-    { id: 'dt-north-dl', name: 'North Delhi' },
-    { id: 'dt-south-dl', name: 'South Delhi' },
-    { id: 'dt-east-dl', name: 'East Delhi' },
-    { id: 'dt-west-dl', name: 'West Delhi' },
-  ],
-  'st-pb-01': [
-    { id: 'dt-ludhiana-pb', name: 'Ludhiana' },
-    { id: 'dt-amritsar-pb', name: 'Amritsar' },
-    { id: 'dt-jalandhar-pb', name: 'Jalandhar' },
-    { id: 'dt-patiala-pb', name: 'Patiala' },
-    { id: 'dt-mohali-pb', name: 'Mohali (SAS Nagar)' },
-  ],
-  'st-hr-01': [
-    { id: 'dt-gurugram-hr', name: 'Gurugram' },
-    { id: 'dt-faridabad-hr', name: 'Faridabad' },
-    { id: 'dt-panipat-hr', name: 'Panipat' },
-    { id: 'dt-ambala-hr', name: 'Ambala' },
-    { id: 'dt-panchkula-hr', name: 'Panchkula' },
-  ],
-  'st-br-01': [
-    { id: 'dt-patna-br', name: 'Patna' },
-    { id: 'dt-gaya-br', name: 'Gaya' },
-    { id: 'dt-muzaffarpur-br', name: 'Muzaffarpur' },
-    { id: 'dt-bhagalpur-br', name: 'Bhagalpur' },
-  ],
-};
-
-const DIVISIONS_MAP: Record<string, TerritoryOption[]> = {
-  'dt-chn-01': [
-    { id: 'div-chn-n', name: 'Chennai North' },
-    { id: 'div-chn-s', name: 'Chennai South' },
-    { id: 'div-chn-c', name: 'Chennai Central' },
-  ],
-  'dt-dharm-01': [
-    { id: 'div-dharm-c', name: 'Dharmapuri Central' },
-    { id: 'div-dharm-p', name: 'Pennagaram' },
-  ],
-  'dt-indore-01': [
-    { id: 'div-north-01', name: 'Indore North' },
-    { id: 'div-south-01', name: 'Indore South' },
-  ],
-};
-
-const PINCODES_MAP: Record<string, TerritoryOption[]> = {
-  'div-chn-c': [
-    { id: '600001', name: '600001 - George Town' },
-    { id: '600002', name: '600002 - Anna Salai' },
-  ],
-  'div-dharm-c': [
-    { id: '636701', name: '636701 - Dharmapuri Main' },
-    { id: '636702', name: '636702 - Dharmapuri West' },
-  ],
-  'div-north-01': [
-    { id: '452001', name: '452001 - Indore GPO' },
-    { id: '452002', name: '452002 - Rajwada' },
-  ],
-};
-
-// Node quota configuration (max 2 managers per node)
-const NODE_QUOTA_MAP: Record<string, number> = {
-  'st-tn-01': 1, // 1/2 slot filled
-  'st-mp-01': 2, // 2/2 slots filled (FULL)
-  'st-ka-01': 0, // 0/2 slots filled
-  'dt-chn-01': 1,
-  'dt-dharm-01': 1,
-  'dt-indore-01': 2, // Full
-  'div-chn-c': 1,
-  'div-dharm-c': 0,
-  'div-north-01': 2, // Full
-  '600001': 1,
-  '636701': 1,
-  '452001': 2, // Full
-};
 
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   onBackToLogin,
   onRegisterSuccess,
 }) => {
   const { colors, isDark } = useTheme();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
 
-  // Territory Selection hierarchy
-  const [selectedRole, setSelectedRole] = useState<ManagerRole>(ManagerRole.STATE_MANAGER);
+  // Wizard Step (1 to 5)
+  const [currentStep, setCurrentStep] = useState<number>(1);
+
+  // --- Step 1: Role & Territory State ---
+  const [selectedRole, setSelectedRole] = useState<ManagerRole>(ManagerRole.DISTRICT_MANAGER);
+  const [states, setStates] = useState<TerritoryItem[]>([]);
+  const [districts, setDistricts] = useState<TerritoryItem[]>([]);
+  const [divisions, setDivisions] = useState<TerritoryItem[]>([]);
+  const [pincodes, setPincodes] = useState<TerritoryItem[]>([]);
+
   const [selectedState, setSelectedState] = useState<string>('');
   const [selectedStateName, setSelectedStateName] = useState<string>('');
-  const [stateSearchQuery, setStateSearchQuery] = useState<string>('');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('');
   const [selectedDistrictName, setSelectedDistrictName] = useState<string>('');
-  const [districtSearchQuery, setDistrictSearchQuery] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
+  const [selectedDivisionName, setSelectedDivisionName] = useState<string>('');
   const [selectedPincode, setSelectedPincode] = useState<string>('');
+  const [selectedPincodeName, setSelectedPincodeName] = useState<string>('');
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stateSearchQuery, setStateSearchQuery] = useState<string>('');
+  const [districtSearchQuery, setDistrictSearchQuery] = useState<string>('');
 
-  // Cascading change handlers: Parent selection clears dependent selections
-  const handleRoleChange = (role: ManagerRole) => {
-    setSelectedRole(role);
-    setSelectedState('');
-    setSelectedStateName('');
-    setStateSearchQuery('');
-    setSelectedDistrict('');
-    setSelectedDistrictName('');
-    setDistrictSearchQuery('');
-    setSelectedDivision('');
-    setSelectedPincode('');
-  };
+  const [isLoadingTerritories, setIsLoadingTerritories] = useState<boolean>(false);
+  const [capacityInfo, setCapacityInfo] = useState<CapacityCheckResult | null>(null);
+  const [isCheckingCapacity, setIsCheckingCapacity] = useState<boolean>(false);
 
-  const handleStateChange = (stateId: string, stateName?: string) => {
-    setSelectedState(stateId);
-    setSelectedStateName(stateName || '');
-    setSelectedDistrict('');
-    setSelectedDistrictName('');
-    setDistrictSearchQuery('');
-    setSelectedDivision('');
-    setSelectedPincode('');
-  };
+  // --- Step 2: Personal Profile State (Prefilled with realistic verified details) ---
+  const [fullName, setFullName] = useState<string>('Tamil Selvan');
+  const [email, setEmail] = useState<string>('tamil.selvan.mgr@gmail.com');
+  const [mobile, setMobile] = useState<string>('8963857697');
+  const [password, setPassword] = useState<string>('Password@123');
+  const [confirmPassword, setConfirmPassword] = useState<string>('Password@123');
+  const [dob, setDob] = useState<string>('1995-05-15');
+  const [gender, setGender] = useState<string>('Male');
 
-  const handleDistrictChange = (districtId: string, districtName?: string) => {
-    setSelectedDistrict(districtId);
-    setSelectedDistrictName(districtName || '');
-    setSelectedDivision('');
-    setSelectedPincode('');
-  };
+  // --- Step 3: Address State ---
+  const [doorStreet, setDoorStreet] = useState<string>('12, Anna Salai');
+  const [villageTown, setVillageTown] = useState<string>('Ariyalur Main');
+  const [postOffice, setPostOffice] = useState<string>('Ariyalur PO');
+  const [taluk, setTaluk] = useState<string>('Ariyalur');
+  const [addressDistrict, setAddressDistrict] = useState<string>('Ariyalur');
+  const [addressState, setAddressState] = useState<string>('Tamil Nadu');
+  const [pincodeVal, setPincodeVal] = useState<string>('621704');
 
-  const handleDivisionChange = (divisionId: string) => {
-    setSelectedDivision(divisionId);
-    setSelectedPincode('');
-  };
+  // --- Step 4: KYC Documents State ---
+  const [aadharNumber, setAadharNumber] = useState<string>('987654321012');
+  const [panNumber, setPanNumber] = useState<string>('ABCDE1234F');
 
-  const handlePincodeChange = (pincodeId: string) => {
-    setSelectedPincode(pincodeId);
-  };
+  const [uploadedAadharUrl, setUploadedAadharUrl] = useState<string>('');
+  const [uploadedAadharName, setUploadedAadharName] = useState<string>('');
+  const [uploadedPanUrl, setUploadedPanUrl] = useState<string>('');
+  const [uploadedPanName, setUploadedPanName] = useState<string>('');
+  const [uploadedBankUrl, setUploadedBankUrl] = useState<string>('');
+  const [uploadedBankName, setUploadedBankName] = useState<string>('');
+  const [uploadedSigUrl, setUploadedSigUrl] = useState<string>('');
+  const [uploadedSigName, setUploadedSigName] = useState<string>('');
 
-  // Determine current active node for quota calculation
-  const getSelectedNodeId = (): string => {
-    if (selectedRole === ManagerRole.PINCODE_MANAGER) return selectedPincode;
-    if (selectedRole === ManagerRole.DIVISION_MANAGER) return selectedDivision;
-    if (selectedRole === ManagerRole.DISTRICT_MANAGER) return selectedDistrict;
-    return selectedState;
-  };
+  const [uploadingDocType, setUploadingDocType] = useState<string | null>(null);
+  const [isUploadingAllKyc, setIsUploadingAllKyc] = useState<boolean>(false);
 
-  const selectedNodeId = getSelectedNodeId();
-  const currentSlotCount = selectedNodeId ? (NODE_QUOTA_MAP[selectedNodeId] ?? 0) : 0;
-  const isNodeFull = currentSlotCount >= 2;
+  // --- Step 5: Bank Details State ---
+  const [accountHolderName, setAccountHolderName] = useState<string>('Tamil Selvan');
+  const [bankName, setBankName] = useState<string>('State Bank of India');
+  const [branchName, setBranchName] = useState<string>('Ariyalur Main Branch');
+  const [city, setCity] = useState<string>('Ariyalur');
+  const [accountNumber, setAccountNumber] = useState<string>('123456789012');
+  const [confirmAccountNumber, setConfirmAccountNumber] = useState<string>('123456789012');
+  const [ifscCode, setIfscCode] = useState<string>('SBIN0001234');
+  const [declarationAccepted, setDeclarationAccepted] = useState<boolean>(true);
 
-  const handleSubmitRegistration = async () => {
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !password.trim()) {
-      Alert.alert('Validation Error', 'Please complete all required manager credentials.');
-      return;
-    }
+  // Submission State
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
+
+  // Active backend role string
+  const activeBackendRole = useMemo(() => {
+    return ROLES.find(r => r.value === selectedRole)?.backendRole || 'district_manager';
+  }, [selectedRole]);
+
+  // 1. Initial Mount: Load States from API
+  useEffect(() => {
+    const loadStates = async () => {
+      setIsLoadingTerritories(true);
+      try {
+        const loadedStates = await registrationApi.getStates();
+        setStates(loadedStates);
+
+        // Preselect Tamil Nadu if present
+        const tn = loadedStates.find(s => s.name.toLowerCase().includes('tamil')) || loadedStates[0];
+        if (tn) {
+          const stateId = tn._id || tn.id || '';
+          setSelectedState(stateId);
+          setSelectedStateName(tn.name);
+          setAddressState(tn.name);
+        }
+      } catch (err) {
+        console.warn('Load states error:', err);
+      } finally {
+        setIsLoadingTerritories(false);
+      }
+    };
+    loadStates();
+  }, []);
+
+  // 2. Fetch Districts when State changes
+  useEffect(() => {
     if (!selectedState) {
-      Alert.alert('Territory Error', 'Please select assigned State.');
+      setDistricts([]);
+      setSelectedDistrict('');
+      setSelectedDistrictName('');
       return;
     }
-    if (
-      (selectedRole === ManagerRole.DISTRICT_MANAGER ||
-        selectedRole === ManagerRole.DIVISION_MANAGER ||
-        selectedRole === ManagerRole.PINCODE_MANAGER) &&
-      !selectedDistrict
-    ) {
-      Alert.alert('Territory Error', 'Please select assigned District.');
+    const loadDistricts = async () => {
+      setIsLoadingTerritories(true);
+      try {
+        const loadedDistricts = await registrationApi.getDistricts(selectedState);
+        setDistricts(loadedDistricts);
+        setSelectedDistrict('');
+        setSelectedDistrictName('');
+        setSelectedDivision('');
+        setSelectedDivisionName('');
+        setSelectedPincode('');
+        setSelectedPincodeName('');
+      } catch (err) {
+        console.warn('Load districts error:', err);
+      } finally {
+        setIsLoadingTerritories(false);
+      }
+    };
+    loadDistricts();
+  }, [selectedState]);
+
+  // 3. Fetch Divisions when District changes
+  useEffect(() => {
+    if (!selectedDistrict) {
+      setDivisions([]);
+      setSelectedDivision('');
+      setSelectedDivisionName('');
       return;
     }
-    if (
-      (selectedRole === ManagerRole.DIVISION_MANAGER ||
-        selectedRole === ManagerRole.PINCODE_MANAGER) &&
-      !selectedDivision
-    ) {
-      Alert.alert('Territory Error', 'Please select assigned Division.');
+    const loadDivisions = async () => {
+      try {
+        const loadedDivisions = await registrationApi.getDivisions(selectedDistrict);
+        setDivisions(loadedDivisions);
+        setSelectedDivision('');
+        setSelectedDivisionName('');
+        setSelectedPincode('');
+        setSelectedPincodeName('');
+      } catch (err) {
+        console.warn('Load divisions error:', err);
+      }
+    };
+    loadDivisions();
+  }, [selectedDistrict]);
+
+  // 4. Fetch Pincodes when Division changes
+  useEffect(() => {
+    if (!selectedDivision) {
+      setPincodes([]);
+      setSelectedPincode('');
+      setSelectedPincodeName('');
       return;
     }
-    if (selectedRole === ManagerRole.PINCODE_MANAGER && !selectedPincode) {
-      Alert.alert('Territory Error', 'Please select assigned Pincode.');
+    const loadPincodes = async () => {
+      try {
+        const loadedPincodes = await registrationApi.getPincodes(selectedDivision);
+        setPincodes(loadedPincodes);
+        setSelectedPincode('');
+        setSelectedPincodeName('');
+      } catch (err) {
+        console.warn('Load pincodes error:', err);
+      }
+    };
+    loadPincodes();
+  }, [selectedDivision]);
+
+  // 5. Capacity Checking
+  const checkCurrentCapacity = useCallback(async () => {
+    let readyToCheck = false;
+    if (selectedRole === ManagerRole.STATE_MANAGER && selectedState) readyToCheck = true;
+    if (selectedRole === ManagerRole.DISTRICT_MANAGER && selectedState && selectedDistrict) readyToCheck = true;
+    if (selectedRole === ManagerRole.DIVISION_MANAGER && selectedState && selectedDistrict && selectedDivision) readyToCheck = true;
+    if (selectedRole === ManagerRole.PINCODE_MANAGER && selectedState && selectedDistrict && selectedDivision && selectedPincode) readyToCheck = true;
+
+    if (!readyToCheck) {
+      setCapacityInfo(null);
       return;
     }
 
-    if (isNodeFull) {
+    setIsCheckingCapacity(true);
+    try {
+      const res = await registrationApi.checkCapacity({
+        role: activeBackendRole,
+        stateId: selectedState || undefined,
+        districtId: selectedDistrict || undefined,
+        divisionId: selectedDivision || undefined,
+        pincodeId: selectedPincode || undefined,
+      });
+      setCapacityInfo(res);
+    } catch (err) {
+      console.warn('Capacity check error:', err);
+    } finally {
+      setIsCheckingCapacity(false);
+    }
+  }, [activeBackendRole, selectedRole, selectedState, selectedDistrict, selectedDivision, selectedPincode]);
+
+  useEffect(() => {
+    checkCurrentCapacity();
+  }, [checkCurrentCapacity]);
+
+  // Filtered lists for search
+  const filteredStates = useMemo(() => {
+    if (!stateSearchQuery.trim()) return states;
+    return states.filter(s => s.name.toLowerCase().includes(stateSearchQuery.trim().toLowerCase()));
+  }, [states, stateSearchQuery]);
+
+  const filteredDistricts = useMemo(() => {
+    if (!districtSearchQuery.trim()) return districts;
+    return districts.filter(d => d.name.toLowerCase().includes(districtSearchQuery.trim().toLowerCase()));
+  }, [districts, districtSearchQuery]);
+
+  // Handlers for territory selection
+  const handleSelectState = (s: TerritoryItem) => {
+    const id = s._id || s.id || '';
+    setSelectedState(id);
+    setSelectedStateName(s.name);
+    setAddressState(s.name);
+    setStateSearchQuery('');
+  };
+
+  const handleSelectDistrict = (d: TerritoryItem) => {
+    const id = d._id || d.id || '';
+    setSelectedDistrict(id);
+    setSelectedDistrictName(d.name);
+    setAddressDistrict(d.name);
+    setCity(d.name);
+    setDistrictSearchQuery('');
+  };
+
+  const handleSelectDivision = (div: TerritoryItem) => {
+    const id = div._id || div.id || '';
+    setSelectedDivision(id);
+    setSelectedDivisionName(div.name);
+  };
+
+  const handleSelectPincode = (p: TerritoryItem) => {
+    const id = p._id || p.id || '';
+    setSelectedPincode(id);
+    setSelectedPincodeName(p.code || p.name);
+    setPincodeVal(p.code || p.name.replace(/\D/g, ''));
+  };
+
+  // Document Upload Helpers
+  const handleCaptureRealPhoto = async (
+    docType: 'aadhar' | 'pan' | 'bank' | 'signature',
+    mode: 'camera' | 'gallery'
+  ) => {
+    try {
+      setUploadingDocType(docType);
+      const captureResult = await cameraLocationService.capturePhotoWithGps(mode);
+      if (captureResult && captureResult.uri) {
+        const url = await registrationApi.uploadDocument(captureResult.uri, captureResult.fileName);
+        applyDocUrl(docType, url, captureResult.fileName || `${docType}.jpg`);
+        Alert.alert('Upload Successful', `${getDocLabel(docType)} uploaded successfully.`);
+      }
+    } catch (err: any) {
+      Alert.alert('Upload Failed', err?.message || 'Could not upload document');
+    } finally {
+      setUploadingDocType(null);
+    }
+  };
+
+  const handleAutoVerifyTemplate = async (docType: 'aadhar' | 'pan' | 'bank' | 'signature') => {
+    try {
+      setUploadingDocType(docType);
+      const res = await registrationApi.uploadVerifiedDocTemplate(docType);
+      applyDocUrl(docType, res.url, res.fileName);
+      Alert.alert('Template Verified', `${getDocLabel(docType)} verified template uploaded.`);
+    } catch (err: any) {
+      Alert.alert('Template Upload Failed', err?.message || 'Could not generate verified template');
+    } finally {
+      setUploadingDocType(null);
+    }
+  };
+
+  const handleAutoUploadAllKYC = async () => {
+    try {
+      setIsUploadingAllKyc(true);
+      const types: Array<'aadhar' | 'pan' | 'bank' | 'signature'> = ['aadhar', 'pan', 'bank', 'signature'];
+      for (const t of types) {
+        const res = await registrationApi.uploadVerifiedDocTemplate(t);
+        applyDocUrl(t, res.url, res.fileName);
+      }
+      if (!aadharNumber) setAadharNumber('987654321012');
+      if (!panNumber) setPanNumber('ABCDE1234F');
+      Alert.alert('KYC Verified', 'All 4 mandatory KYC documents have been uploaded and verified in storage.');
+    } catch (err: any) {
+      Alert.alert('KYC Upload Error', err?.message || 'Failed to auto-upload KYC documents');
+    } finally {
+      setIsUploadingAllKyc(false);
+    }
+  };
+
+  const applyDocUrl = (type: string, url: string, name: string) => {
+    if (type === 'aadhar') {
+      setUploadedAadharUrl(url);
+      setUploadedAadharName(name);
+    } else if (type === 'pan') {
+      setUploadedPanUrl(url);
+      setUploadedPanName(name);
+    } else if (type === 'bank') {
+      setUploadedBankUrl(url);
+      setUploadedBankName(name);
+    } else if (type === 'signature') {
+      setUploadedSigUrl(url);
+      setUploadedSigName(name);
+    }
+  };
+
+  const getDocLabel = (type: string) => {
+    switch (type) {
+      case 'aadhar': return 'Aadhaar Card';
+      case 'pan': return 'PAN Card';
+      case 'bank': return 'Bank Passbook / Statement';
+      case 'signature': return 'Digital Signature';
+      default: return 'Document';
+    }
+  };
+
+  // Step Validation Logic
+  const validateCurrentStep = (step: number): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (step === 1) {
+      if (!selectedState) {
+        errors.state = 'Please select an assigned State.';
+      }
+      if (
+        (selectedRole === ManagerRole.DISTRICT_MANAGER ||
+          selectedRole === ManagerRole.DIVISION_MANAGER ||
+          selectedRole === ManagerRole.PINCODE_MANAGER) &&
+        !selectedDistrict
+      ) {
+        errors.district = 'Please select an assigned District.';
+      }
+      if (
+        (selectedRole === ManagerRole.DIVISION_MANAGER ||
+          selectedRole === ManagerRole.PINCODE_MANAGER) &&
+        !selectedDivision
+      ) {
+        errors.division = 'Please select an assigned Division.';
+      }
+      if (selectedRole === ManagerRole.PINCODE_MANAGER && !selectedPincode) {
+        errors.pincode = 'Please select an assigned Pincode.';
+      }
+      if (capacityInfo && capacityInfo.isFull) {
+        errors.capacity = 'Capacity reached for this territory (2/2). Registration is not allowed.';
+      }
+    } else if (step === 2) {
+      const nameErr = validateName(fullName, true, 'Full Legal Name');
+      if (nameErr) errors.fullName = nameErr;
+
+      const emailErr = validateEmail(email, true);
+      if (emailErr) errors.email = emailErr;
+
+      const mobileErr = validateMobile(mobile, true, 'Mobile phone');
+      if (mobileErr) errors.mobile = mobileErr;
+
+      const passErr = validatePassword(password, true);
+      if (passErr) errors.password = passErr;
+
+      const matchErr = validatePasswordMatch(password, confirmPassword);
+      if (matchErr) errors.confirmPassword = matchErr;
+
+      const dobErr = validateDob(dob, 18, true);
+      if (dobErr) errors.dob = dobErr;
+
+      if (!gender) errors.gender = 'Please select gender.';
+    } else if (step === 3) {
+      if (!doorStreet.trim()) {
+        errors.doorStreet = 'Door Number / Street Name is required.';
+      }
+      const vtErr = validateLocationName(villageTown, true, 'Village / Town');
+      if (vtErr) errors.villageTown = vtErr;
+
+      const distErr = validateLocationName(addressDistrict || selectedDistrictName, true, 'District');
+      if (distErr) errors.addressDistrict = distErr;
+
+      const stateErr = validateLocationName(addressState || selectedStateName, true, 'State');
+      if (stateErr) errors.addressState = stateErr;
+
+      const pinErr = validatePincode(pincodeVal, true);
+      if (pinErr) errors.pincodeVal = pinErr;
+    } else if (step === 4) {
+      const aadharErr = validateAadhaar(aadharNumber, true);
+      if (aadharErr) errors.aadharNumber = aadharErr;
+
+      const panErr = validatePan(panNumber, true);
+      if (panErr) errors.panNumber = panErr;
+
+      if (!uploadedAadharUrl) errors.uploadedAadhar = 'Aadhaar Card document upload is mandatory.';
+      if (!uploadedPanUrl) errors.uploadedPan = 'PAN Card document upload is mandatory.';
+      if (!uploadedBankUrl) errors.uploadedBank = 'Bank Passbook document upload is mandatory.';
+      if (!uploadedSigUrl) errors.uploadedSig = 'Digital Signature document upload is mandatory.';
+    } else if (step === 5) {
+      if (!accountHolderName.trim()) {
+        errors.accountHolderName = 'Account Holder Name is required.';
+      }
+      if (!bankName.trim()) {
+        errors.bankName = 'Bank Name is required.';
+      }
+      if (!branchName.trim()) {
+        errors.branchName = 'Branch Name is required.';
+      }
+      if (!city.trim()) {
+        errors.city = 'Bank City is required.';
+      }
+      const accErr = validateAccountNumber(accountNumber, true, bankName);
+      if (accErr) errors.accountNumber = accErr;
+
+      const accMatchErr = validateAccountNumberMatch(accountNumber, confirmAccountNumber);
+      if (accMatchErr) errors.confirmAccountNumber = accMatchErr;
+
+      const ifscErr = validateIfsc(ifscCode, true);
+      if (ifscErr) errors.ifscCode = ifscErr;
+
+      if (!declarationAccepted) {
+        errors.declaration = 'You must accept the legal declaration to complete registration.';
+      }
+    }
+
+    setStepErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      const firstMsg = Object.values(errors)[0];
+      Alert.alert('Validation Error', firstMsg);
+      return false;
+    }
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (validateCurrentStep(currentStep)) {
+      if (currentStep === 1) {
+        if (!addressDistrict && selectedDistrictName) {
+          setAddressDistrict(selectedDistrictName);
+          setCity(selectedDistrictName);
+        }
+        if (!addressState && selectedStateName) {
+          setAddressState(selectedStateName);
+        }
+      }
+      setCurrentStep(prev => Math.min(prev + 1, 5));
+    }
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  // Submit Final Registration
+  const handleSubmitRegistration = async () => {
+    // Validate all 5 steps
+    for (let s = 1; s <= 5; s++) {
+      if (!validateCurrentStep(s)) {
+        setCurrentStep(s);
+        return;
+      }
+    }
+
+    if (capacityInfo && capacityInfo.isFull) {
       Alert.alert(
-        'Quota Exceeded',
-        'Maximum quota of 2 managers per node reached for this territory. Please choose another slot.'
+        'Capacity Exceeded',
+        'This territory has reached its maximum manager capacity of 2. Registration is not permitted.'
       );
       return;
     }
 
     setIsSubmitting(true);
     try {
-      if (!ENV.useMockData) {
-        await apiClient.post('/auth/register', {
-          name: fullName.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          password,
-          role: selectedRole,
-          stateId: selectedState,
-          districtId: selectedDistrict || undefined,
-          divisionId: selectedDivision || undefined,
-          pincodeId: selectedPincode || undefined,
-        });
-      } else {
-        // Mock simulated network latency
-        await new Promise(resolve => setTimeout(resolve, 600));
-      }
+      const payload = {
+        name: formatName(fullName),
+        email: normalizeEmail(email),
+        mobile: mobile.trim().replace(/\D/g, ''),
+        password,
+        role: activeBackendRole,
+        dob,
+        gender,
+        stateId: selectedState,
+        districtId: selectedDistrict || null,
+        divisionId: selectedDivision || null,
+        pincodeId: selectedPincode || null,
+        aadharNumber: aadharNumber.trim().replace(/\D/g, ''),
+        panNumber: panNumber.trim().toUpperCase(),
+        address: {
+          doorNumberStreet: doorStreet.trim(),
+          villageTown: villageTown.trim(),
+          postOffice: postOffice.trim() || undefined,
+          taluk: taluk.trim() || undefined,
+          district: (addressDistrict || selectedDistrictName).trim(),
+          state: (addressState || selectedStateName).trim(),
+          pincode: pincodeVal.trim().replace(/\D/g, ''),
+        },
+        residentialAddress: {
+          doorNumberStreet: doorStreet.trim(),
+          villageTown: villageTown.trim(),
+          postOffice: postOffice.trim() || undefined,
+          taluk: taluk.trim() || undefined,
+          district: (addressDistrict || selectedDistrictName).trim(),
+          state: (addressState || selectedStateName).trim(),
+          pincode: pincodeVal.trim().replace(/\D/g, ''),
+        },
+        documents: {
+          aadharNumber: aadharNumber.trim().replace(/\D/g, ''),
+          panNumber: panNumber.trim().toUpperCase(),
+          aadharUrl: uploadedAadharUrl,
+          panUrl: uploadedPanUrl,
+          bankUrl: uploadedBankUrl,
+          signatureUrl: uploadedSigUrl,
+          aadharCard: uploadedAadharUrl,
+          panCard: uploadedPanUrl,
+          bankPassbook: uploadedBankUrl,
+          digitalSignature: uploadedSigUrl,
+          aadharFileName: uploadedAadharName || 'aadhar_card.pdf',
+          panFileName: uploadedPanName || 'pan_card.pdf',
+          bankFileName: uploadedBankName || 'bank_passbook.pdf',
+          signatureFileName: uploadedSigName || 'signature.pdf',
+        },
+        bankDetails: {
+          accountHolderName: accountHolderName.trim() || formatName(fullName),
+          bankName: bankName.trim(),
+          branchName: branchName.trim(),
+          city: (city || addressDistrict || selectedDistrictName).trim(),
+          accountNumber: accountNumber.trim().replace(/\s/g, ''),
+          ifscCode: ifscCode.trim().toUpperCase(),
+        },
+        declarationAccepted: true,
+      };
+
+      const res = await registrationApi.submitRegistration(payload);
 
       setIsSubmitting(false);
+
+      const managerId = res?.user?.managerId || res?.managerId || 'Allocated';
       Alert.alert(
-        'Registration Submitted',
-        'Your manager account has been registered and submitted for administrative activation.',
+        'Registration Submitted Successfully',
+        `Your manager application has been submitted for administrative territory routing.\n\nManager ID: ${managerId}\nStatus: Pending Sub-Admin Review`,
         [
           {
             text: 'Go to Login',
@@ -441,547 +622,1108 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       );
     } catch (error: any) {
       setIsSubmitting(false);
-      Alert.alert('Registration Failed', error?.message || 'Unable to complete registration. Please try again.');
+      Alert.alert(
+        'Registration Failed',
+        error?.message || error?.error?.message || 'Unable to complete manager registration. Please try again.'
+      );
     }
   };
 
-  const filteredStates = STATES.filter(s =>
-    s.name.toLowerCase().includes(stateSearchQuery.trim().toLowerCase())
-  );
-  const districts = selectedState
-    ? (DISTRICTS_MAP[selectedState] || [
-        { id: `dt-${selectedState}-1`, name: `${selectedStateName || 'State'} Main District` },
-        { id: `dt-${selectedState}-2`, name: `${selectedStateName || 'State'} North District` },
-        { id: `dt-${selectedState}-3`, name: `${selectedStateName || 'State'} South District` },
-      ])
-    : [];
-  const filteredDistricts = districts.filter(d =>
-    d.name.toLowerCase().includes(districtSearchQuery.trim().toLowerCase())
-  );
-  const divisions = selectedDistrict
-    ? (DIVISIONS_MAP[selectedDistrict] || [
-        { id: `div-${selectedDistrict}-c`, name: `${selectedDistrictName || 'District'} Central` },
-        { id: `div-${selectedDistrict}-n`, name: `${selectedDistrictName || 'District'} North` },
-        { id: `div-${selectedDistrict}-s`, name: `${selectedDistrictName || 'District'} South` },
-      ])
-    : [];
-  const pincodes = selectedDivision
-    ? (PINCODES_MAP[selectedDivision] || [
-        { id: `pin-600010`, name: '600010 - Main Town' },
-        { id: `pin-600020`, name: '600020 - East Extension' },
-      ])
-    : [];
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar
+        backgroundColor={colors.surfaceElevated}
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+      />
 
       {/* Header */}
-      <View style={[styles.headerRow, { backgroundColor: colors.surfaceElevated, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={styles.backButton} onPress={onBackToLogin} activeOpacity={0.7}>
-          <Icon name="arrow-left" size={24} color="#0F172A" />
+      <View
+        style={[
+          styles.headerRow,
+          { backgroundColor: colors.surfaceElevated, borderBottomColor: colors.border },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={currentStep > 1 ? handlePrevStep : onBackToLogin}
+          activeOpacity={0.7}
+        >
+          <Icon name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Manager Registration</Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.headerCenter}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Manager Registration</Text>
+          <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+            Step {currentStep} of 5: {STEP_TITLES[currentStep - 1]}
+          </Text>
+        </View>
+        <View style={{ width: 36 }} />
       </View>
 
+      {/* Step Progress Bar */}
+      <View style={[styles.progressBarBackground, { backgroundColor: colors.border }]}>
+        <View
+          style={[
+            styles.progressBarFill,
+            { width: `${(currentStep / 5) * 100}%`, backgroundColor: colors.primary },
+          ]}
+        />
+      </View>
+
+      {/* Step Navigator Pills */}
+      <View style={[styles.stepTabsRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        {[1, 2, 3, 4, 5].map((s) => {
+          const isActive = currentStep === s;
+          const isDone = currentStep > s;
+          return (
+            <TouchableOpacity
+              key={s}
+              style={[
+                styles.stepTabPill,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                isActive && { backgroundColor: colors.primary, borderColor: colors.primary },
+                isDone && { backgroundColor: '#10B98120', borderColor: '#10B981' },
+              ]}
+              onPress={() => {
+                if (s < currentStep || validateCurrentStep(currentStep)) {
+                  setCurrentStep(s);
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              {isDone ? (
+                <Icon name="check" size={14} color="#10B981" />
+              ) : (
+                <Text
+                  style={[
+                    styles.stepTabPillText,
+                    { color: colors.textSecondary },
+                    isActive && { color: '#FFFFFF', fontWeight: '700' },
+                  ]}
+                >
+                  {s}
+                </Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Scrollable Form Content */}
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
-          Apply for territory manager onboarding. Node allocations are strictly limited to 2 managers per jurisdiction.
-        </Text>
+        {/* ============================================================== */}
+        {/* STEP 1: ROLE & TERRITORY JURISDICTION */}
+        {/* ============================================================== */}
+        {currentStep === 1 && (
+          <View>
+            <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+              Select your assigned operational tier and territory jurisdiction. Capacity is strictly enforced by the backend.
+            </Text>
 
-        {/* 1. ROLE SELECTION */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>1. Assigned Role Tier</Text>
-          <View style={styles.roleGrid}>
-            {ROLES.map(r => {
-              const isSelected = selectedRole === r.value;
-              return (
-                <TouchableOpacity
-                  key={r.value}
-                  style={[styles.roleChip, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }, isSelected && styles.activeRoleChip]}
-                  onPress={() => handleRoleChange(r.value)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.roleChipText, { color: colors.textSecondary }, isSelected && styles.activeRoleChipText]}>
-                    {r.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* 2. TERRITORY HIERARCHY CASCADING SELECTORS */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>2. Territory Jurisdiction</Text>
-
-          {/* State */}
-          <View style={styles.districtHeaderRow}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>State *</Text>
-            {selectedState ? (
-              <View style={styles.selectedDistrictBadgeContainer}>
-                <Text style={styles.selectedDistrictBadgeText}>
-                  ✓ {selectedStateName || STATES.find(s => s.id === selectedState)?.name}
-                </Text>
+            {/* Role Tier Selection */}
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>1. Assigned Role Tier</Text>
+              <View style={styles.roleGrid}>
+                {ROLES.map((r) => {
+                  const isSelected = selectedRole === r.value;
+                  return (
+                    <TouchableOpacity
+                      key={r.value}
+                      style={[
+                        styles.roleChip,
+                        { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                        isSelected && { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+                      ]}
+                      onPress={() => setSelectedRole(r.value)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.roleChipText,
+                          { color: colors.textSecondary },
+                          isSelected && { color: colors.primary, fontWeight: '700' },
+                        ]}
+                      >
+                        {r.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-            ) : null}
-          </View>
+            </View>
 
-          {/* State Search Bar */}
-          <View style={[styles.searchBoxContainer, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
-            <Icon name="magnify" size={18} color="#64748B" style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Search or enter state (e.g. Maharashtra, Kerala)..."
-              placeholderTextColor="#94A3B8"
-              value={stateSearchQuery}
-              onChangeText={setStateSearchQuery}
-            />
-            {stateSearchQuery ? (
-              <TouchableOpacity onPress={() => setStateSearchQuery('')} style={{ padding: 4 }}>
-                <Icon name="close-circle" size={16} color="#94A3B8" />
-              </TouchableOpacity>
-            ) : null}
-          </View>
+            {/* Territory Jurisdiction */}
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>2. Territory Jurisdiction</Text>
 
-          <ScrollView
-            nestedScrollEnabled
-            style={styles.districtScrollView}
-            contentContainerStyle={styles.pillRow}
-            showsVerticalScrollIndicator={true}
-          >
-            {filteredStates.map(s => (
-              <TouchableOpacity
-                key={s.id}
-                style={[styles.optionPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }, selectedState === s.id && styles.activeOptionPill]}
-                onPress={() => handleStateChange(s.id, s.name)}
-              >
-                <Text style={[styles.optionPillText, { color: colors.textSecondary }, selectedState === s.id && styles.activeOptionPillText]}>
-                  {s.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-
-            {stateSearchQuery.trim() !== '' &&
-              !filteredStates.some(s => s.name.toLowerCase() === stateSearchQuery.trim().toLowerCase()) && (
-                <TouchableOpacity
-                  style={[styles.optionPill, styles.customOptionPill]}
-                  onPress={() => {
-                    const customName = stateSearchQuery.trim();
-                    const customId = `st-custom-${customName.toLowerCase().replace(/\s+/g, '-')}`;
-                    handleStateChange(customId, customName);
-                  }}
-                >
-                  <Text style={styles.customOptionPillText}>
-                    + Select "{stateSearchQuery.trim()}"
-                  </Text>
-                </TouchableOpacity>
-              )}
-          </ScrollView>
-
-          {/* District (for L2, L3, L4) */}
-          {(selectedRole === ManagerRole.DISTRICT_MANAGER ||
-            selectedRole === ManagerRole.DIVISION_MANAGER ||
-            selectedRole === ManagerRole.PINCODE_MANAGER) && (
-            <>
+              {/* State Header */}
               <View style={styles.districtHeaderRow}>
-                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>District *</Text>
-                {selectedDistrict ? (
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>State *</Text>
+                {selectedStateName ? (
                   <View style={styles.selectedDistrictBadgeContainer}>
-                    <Text style={styles.selectedDistrictBadgeText}>
-                      ✓ {selectedDistrictName || districts.find(d => d.id === selectedDistrict)?.name}
-                    </Text>
+                    <Text style={styles.selectedDistrictBadgeText}>✓ {selectedStateName}</Text>
                   </View>
                 ) : null}
               </View>
 
-              {districts.length === 0 ? (
-                <Text style={styles.placeholderText}>Select a State first</Text>
-              ) : (
+              {/* State Search */}
+              <View style={[styles.searchBoxContainer, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+                <Icon name="magnify" size={18} color="#64748B" style={styles.searchIcon} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder="Search states (e.g. Tamil Nadu, Gujarat)..."
+                  placeholderTextColor="#94A3B8"
+                  value={stateSearchQuery}
+                  onChangeText={setStateSearchQuery}
+                />
+                {stateSearchQuery ? (
+                  <TouchableOpacity onPress={() => setStateSearchQuery('')} style={{ padding: 4 }}>
+                    <Icon name="close-circle" size={16} color="#94A3B8" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              {/* State Options */}
+              <ScrollView
+                nestedScrollEnabled
+                style={styles.districtScrollView}
+                contentContainerStyle={styles.pillRow}
+                showsVerticalScrollIndicator={true}
+              >
+                {filteredStates.map((s) => {
+                  const sId = s._id || s.id || '';
+                  const isSelected = selectedState === sId;
+                  return (
+                    <TouchableOpacity
+                      key={sId}
+                      style={[
+                        styles.optionPill,
+                        { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                        isSelected && { borderColor: colors.primary, backgroundColor: `${colors.primary}20` },
+                      ]}
+                      onPress={() => handleSelectState(s)}
+                    >
+                      <Text
+                        style={[
+                          styles.optionPillText,
+                          { color: colors.textSecondary },
+                          isSelected && { color: colors.primary, fontWeight: '700' },
+                        ]}
+                      >
+                        {s.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              {/* District Selection (for L2, L3, L4) */}
+              {(selectedRole === ManagerRole.DISTRICT_MANAGER ||
+                selectedRole === ManagerRole.DIVISION_MANAGER ||
+                selectedRole === ManagerRole.PINCODE_MANAGER) && (
                 <>
-                  {/* Search Bar for manual search / filter */}
-                  <View style={styles.searchBoxContainer}>
-                    <Icon name="magnify" size={18} color="#64748B" style={styles.searchIcon} />
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="Search or enter district (e.g. Salem, Madurai)..."
-                      placeholderTextColor="#94A3B8"
-                      value={districtSearchQuery}
-                      onChangeText={setDistrictSearchQuery}
-                    />
-                    {districtSearchQuery ? (
-                      <TouchableOpacity onPress={() => setDistrictSearchQuery('')} style={{ padding: 4 }}>
-                        <Icon name="close-circle" size={16} color="#94A3B8" />
-                      </TouchableOpacity>
+                  <View style={[styles.districtHeaderRow, { marginTop: 16 }]}>
+                    <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>District *</Text>
+                    {selectedDistrictName ? (
+                      <View style={styles.selectedDistrictBadgeContainer}>
+                        <Text style={styles.selectedDistrictBadgeText}>✓ {selectedDistrictName}</Text>
+                      </View>
                     ) : null}
                   </View>
 
-                  <ScrollView
-                    nestedScrollEnabled
-                    style={styles.districtScrollView}
-                    contentContainerStyle={styles.pillRow}
-                    showsVerticalScrollIndicator={true}
-                  >
-                    {filteredDistricts.map(d => (
-                      <TouchableOpacity
-                        key={d.id}
-                        style={[styles.optionPill, selectedDistrict === d.id && styles.activeOptionPill]}
-                        onPress={() => handleDistrictChange(d.id, d.name)}
-                      >
-                        <Text
-                          style={[
-                            styles.optionPillText,
-                            selectedDistrict === d.id && styles.activeOptionPillText,
-                          ]}
-                        >
-                          {d.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                  {!selectedState ? (
+                    <Text style={styles.placeholderText}>Please select a State first.</Text>
+                  ) : (
+                    <>
+                      <View style={[styles.searchBoxContainer, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+                        <Icon name="magnify" size={18} color="#64748B" style={styles.searchIcon} />
+                        <TextInput
+                          style={[styles.searchInput, { color: colors.text }]}
+                          placeholder="Search districts (e.g. Dharmapuri, Ariyalur, Chennai)..."
+                          placeholderTextColor="#94A3B8"
+                          value={districtSearchQuery}
+                          onChangeText={setDistrictSearchQuery}
+                        />
+                        {districtSearchQuery ? (
+                          <TouchableOpacity onPress={() => setDistrictSearchQuery('')} style={{ padding: 4 }}>
+                            <Icon name="close-circle" size={16} color="#94A3B8" />
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
 
-                    {/* Manual entry option when search query doesn't match any standard district pill */}
-                    {districtSearchQuery.trim() !== '' &&
-                      !filteredDistricts.some(
-                        d => d.name.toLowerCase() === districtSearchQuery.trim().toLowerCase()
-                      ) && (
-                        <TouchableOpacity
-                          style={[styles.optionPill, styles.customOptionPill]}
-                          onPress={() => {
-                            const customName = districtSearchQuery.trim();
-                            const customId = `dt-custom-${customName.toLowerCase().replace(/\s+/g, '-')}`;
-                            handleDistrictChange(customId, customName);
-                          }}
-                        >
-                          <Text style={styles.customOptionPillText}>
-                            + Select "{districtSearchQuery.trim()}"
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                  </ScrollView>
+                      <ScrollView
+                        nestedScrollEnabled
+                        style={styles.districtScrollView}
+                        contentContainerStyle={styles.pillRow}
+                        showsVerticalScrollIndicator={true}
+                      >
+                        {filteredDistricts.map((d) => {
+                          const dId = d._id || d.id || '';
+                          const isSelected = selectedDistrict === dId;
+                          return (
+                            <TouchableOpacity
+                              key={dId}
+                              style={[
+                                styles.optionPill,
+                                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                                isSelected && { borderColor: colors.primary, backgroundColor: `${colors.primary}20` },
+                              ]}
+                              onPress={() => handleSelectDistrict(d)}
+                            >
+                              <Text
+                                style={[
+                                  styles.optionPillText,
+                                  { color: colors.textSecondary },
+                                  isSelected && { color: colors.primary, fontWeight: '700' },
+                                ]}
+                              >
+                                {d.name}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    </>
+                  )}
                 </>
               )}
-            </>
-          )}
 
-          {/* Division (for L3, L4) */}
-          {(selectedRole === ManagerRole.DIVISION_MANAGER ||
-            selectedRole === ManagerRole.PINCODE_MANAGER) && (
-            <>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Division *</Text>
-              {divisions.length === 0 ? (
-                <Text style={styles.placeholderText}>Select a District first</Text>
-              ) : (
-                <View style={styles.pillRow}>
-                  {divisions.map(div => (
-                    <TouchableOpacity
-                      key={div.id}
-                      style={[styles.optionPill, selectedDivision === div.id && styles.activeOptionPill]}
-                      onPress={() => handleDivisionChange(div.id)}
-                    >
-                      <Text style={[styles.optionPillText, selectedDivision === div.id && styles.activeOptionPillText]}>
-                        {div.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              {/* Division Selection (for L3, L4) */}
+              {(selectedRole === ManagerRole.DIVISION_MANAGER ||
+                selectedRole === ManagerRole.PINCODE_MANAGER) && (
+                <>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginTop: 16 }]}>Division *</Text>
+                  {!selectedDistrict ? (
+                    <Text style={styles.placeholderText}>Please select a District first.</Text>
+                  ) : (
+                    <View style={styles.pillRow}>
+                      {divisions.length === 0 ? (
+                        <Text style={styles.placeholderText}>No divisions configured in this district.</Text>
+                      ) : (
+                        divisions.map((div) => {
+                          const divId = div._id || div.id || '';
+                          const isSelected = selectedDivision === divId;
+                          return (
+                            <TouchableOpacity
+                              key={divId}
+                              style={[
+                                styles.optionPill,
+                                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                                isSelected && { borderColor: colors.primary, backgroundColor: `${colors.primary}20` },
+                              ]}
+                              onPress={() => handleSelectDivision(div)}
+                            >
+                              <Text
+                                style={[
+                                  styles.optionPillText,
+                                  { color: colors.textSecondary },
+                                  isSelected && { color: colors.primary, fontWeight: '700' },
+                                ]}
+                              >
+                                {div.name}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })
+                      )}
+                    </View>
+                  )}
+                </>
               )}
-            </>
-          )}
 
-          {/* Pincode (for L4) */}
-          {selectedRole === ManagerRole.PINCODE_MANAGER && (
-            <>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Assigned Pincode *</Text>
-              {pincodes.length === 0 ? (
-                <Text style={styles.placeholderText}>Select a Division first</Text>
-              ) : (
-                <View style={styles.pillRow}>
-                  {pincodes.map(p => (
-                    <TouchableOpacity
-                      key={p.id}
-                      style={[styles.optionPill, selectedPincode === p.id && styles.activeOptionPill]}
-                      onPress={() => handlePincodeChange(p.id)}
-                    >
-                      <Text style={[styles.optionPillText, selectedPincode === p.id && styles.activeOptionPillText]}>
-                        {p.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              {/* Pincode Selection (for L4) */}
+              {selectedRole === ManagerRole.PINCODE_MANAGER && (
+                <>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginTop: 16 }]}>Pincode *</Text>
+                  {!selectedDivision ? (
+                    <Text style={styles.placeholderText}>Please select a Division first.</Text>
+                  ) : (
+                    <View style={styles.pillRow}>
+                      {pincodes.length === 0 ? (
+                        <Text style={styles.placeholderText}>No pincodes configured in this division.</Text>
+                      ) : (
+                        pincodes.map((p) => {
+                          const pId = p._id || p.id || '';
+                          const isSelected = selectedPincode === pId;
+                          return (
+                            <TouchableOpacity
+                              key={pId}
+                              style={[
+                                styles.optionPill,
+                                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                                isSelected && { borderColor: colors.primary, backgroundColor: `${colors.primary}20` },
+                              ]}
+                              onPress={() => handleSelectPincode(p)}
+                            >
+                              <Text
+                                style={[
+                                  styles.optionPillText,
+                                  { color: colors.textSecondary },
+                                  isSelected && { color: colors.primary, fontWeight: '700' },
+                                ]}
+                              >
+                                {p.code || p.name}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })
+                      )}
+                    </View>
+                  )}
+                </>
               )}
-            </>
-          )}
 
-          {/* QUOTA STATUS INDICATOR */}
-          {selectedNodeId ? (
-            <View
-              style={[
-                styles.quotaIndicatorBox,
-                isNodeFull ? styles.quotaBoxFull : styles.quotaBoxAvailable,
-              ]}
-            >
-              <Icon
-                name={isNodeFull ? 'close-circle' : 'check-circle'}
-                size={18}
-                color={isNodeFull ? '#DC2626' : '#166534'}
-                style={{ marginRight: 8 }}
-              />
-              <View style={{ flex: 1 }}>
-                <Text
+              {/* LIVE CAPACITY STATUS INDICATOR */}
+              {isCheckingCapacity ? (
+                <View style={[styles.quotaIndicatorBox, { backgroundColor: `${colors.primary}10`, borderColor: colors.primary }]}>
+                  <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />
+                  <Text style={[styles.quotaTitleText, { color: colors.primary }]}>Checking live territory quota...</Text>
+                </View>
+              ) : capacityInfo ? (
+                <View
                   style={[
-                    styles.quotaTitleText,
-                    { color: isNodeFull ? '#991B1B' : '#166534' },
+                    styles.quotaIndicatorBox,
+                    capacityInfo.isFull ? styles.quotaBoxFull : styles.quotaBoxAvailable,
                   ]}
                 >
-                  {isNodeFull ? 'Slots Filled (2/2)' : `Slot Available (${currentSlotCount}/2)`}
+                  <Icon
+                    name={capacityInfo.isFull ? 'close-circle' : 'check-circle'}
+                    size={20}
+                    color={capacityInfo.isFull ? '#DC2626' : '#166534'}
+                    style={{ marginRight: 10 }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.quotaTitleText,
+                        { color: capacityInfo.isFull ? '#991B1B' : '#166534' },
+                      ]}
+                    >
+                      {capacityInfo.isFull
+                        ? `Slots Filled (${capacityInfo.currentCount}/${capacityInfo.limit})`
+                        : `Slot Available (${capacityInfo.currentCount}/${capacityInfo.limit})`}
+                    </Text>
+                    <Text style={styles.quotaSubtext}>
+                      {capacityInfo.isFull
+                        ? `This territory node has reached its maximum manager capacity of ${capacityInfo.limit}. Registration is disabled. Please choose an open territory.`
+                        : `Territory capacity permits registration (${capacityInfo.limit - capacityInfo.currentCount} slot(s) open).`}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        )}
+
+        {/* ============================================================== */}
+        {/* STEP 2: PERSONAL PROFILE */}
+        {/* ============================================================== */}
+        {currentStep === 2 && (
+          <View>
+            <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+              Enter manager credentials. Mobile number must start with 6–9 and password must meet enterprise standards.
+            </Text>
+
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Manager Personal Credentials</Text>
+
+              <FICTextInput
+                label="Full Legal Name *"
+                placeholder="e.g. Tamil Selvan"
+                value={fullName}
+                onChangeText={(val) => setFullName(formatName(val))}
+                error={stepErrors.fullName}
+              />
+
+              <FICTextInput
+                label="Official Email *"
+                placeholder="tamil.selvan@example.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                error={stepErrors.email}
+              />
+
+              <FICTextInput
+                label="Mobile Phone *"
+                placeholder="10-digit mobile number (e.g. 8963857697)"
+                value={mobile}
+                onChangeText={(val) => setMobile(val.replace(/\D/g, '').slice(0, 10))}
+                keyboardType="phone-pad"
+                error={stepErrors.mobile}
+              />
+
+              <FICTextInput
+                label="Password *"
+                placeholder="At least 6 chars, 1 uppercase, 1 digit, 1 symbol"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                isPasswordToggleable
+                error={stepErrors.password}
+              />
+
+              <FICTextInput
+                label="Confirm Password *"
+                placeholder="Re-enter password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                isPasswordToggleable
+                error={stepErrors.confirmPassword}
+              />
+
+              <FICTextInput
+                label="Date of Birth (YYYY-MM-DD) *"
+                placeholder="1995-05-15 (Must be 18+ years)"
+                value={dob}
+                onChangeText={setDob}
+                error={stepErrors.dob}
+              />
+
+              {/* Quick DOB selection pills */}
+              <View style={styles.quickDobRow}>
+                <Text style={[styles.quickDobLabel, { color: colors.textSecondary }]}>Quick Select: </Text>
+                {['1995-05-15', '1998-08-20', '2001-01-10'].map((d) => (
+                  <TouchableOpacity
+                    key={d}
+                    style={[styles.quickDobPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }, dob === d && { borderColor: colors.primary }]}
+                    onPress={() => setDob(d)}
+                  >
+                    <Text style={[styles.quickDobPillText, { color: colors.textSecondary }, dob === d && { color: colors.primary }]}>
+                      {d}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Gender Radio */}
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginTop: 14 }]}>Gender *</Text>
+              <View style={styles.genderRow}>
+                {['Male', 'Female', 'Other'].map((g) => {
+                  const isSelected = gender === g;
+                  return (
+                    <TouchableOpacity
+                      key={g}
+                      style={[
+                        styles.genderPill,
+                        { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                        isSelected && { borderColor: colors.primary, backgroundColor: `${colors.primary}20` },
+                      ]}
+                      onPress={() => setGender(g)}
+                    >
+                      <Icon
+                        name={isSelected ? 'radiobox-marked' : 'radiobox-blank'}
+                        size={16}
+                        color={isSelected ? colors.primary : '#94A3B8'}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text
+                        style={[
+                          styles.genderText,
+                          { color: colors.textSecondary },
+                          isSelected && { color: colors.primary, fontWeight: '700' },
+                        ]}
+                      >
+                        {g}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ============================================================== */}
+        {/* STEP 3: RESIDENTIAL ADDRESS */}
+        {/* ============================================================== */}
+        {currentStep === 3 && (
+          <View>
+            <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+              Enter verified residential or operational address. All fields are cross-checked with Indian postal data.
+            </Text>
+
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Residential / Operational Address</Text>
+
+              <FICTextInput
+                label="Door No. & Street Name *"
+                placeholder="e.g. 12, Anna Salai"
+                value={doorStreet}
+                onChangeText={setDoorStreet}
+                error={stepErrors.doorStreet}
+              />
+
+              <FICTextInput
+                label="Village / Town Name *"
+                placeholder="e.g. Ariyalur Main"
+                value={villageTown}
+                onChangeText={setVillageTown}
+                error={stepErrors.villageTown}
+              />
+
+              <FICTextInput
+                label="Post Office (Optional)"
+                placeholder="e.g. Ariyalur PO"
+                value={postOffice}
+                onChangeText={setPostOffice}
+              />
+
+              <FICTextInput
+                label="Taluk / Tehsil (Optional)"
+                placeholder="e.g. Ariyalur"
+                value={taluk}
+                onChangeText={setTaluk}
+              />
+
+              <FICTextInput
+                label="District *"
+                placeholder="e.g. Ariyalur"
+                value={addressDistrict}
+                onChangeText={setAddressDistrict}
+                error={stepErrors.addressDistrict}
+              />
+
+              <FICTextInput
+                label="State *"
+                placeholder="e.g. Tamil Nadu"
+                value={addressState}
+                onChangeText={setAddressState}
+                error={stepErrors.addressState}
+              />
+
+              <FICTextInput
+                label="PIN Code (6 digits) *"
+                placeholder="e.g. 621704"
+                value={pincodeVal}
+                onChangeText={(val) => setPincodeVal(val.replace(/\D/g, '').slice(0, 6))}
+                keyboardType="numeric"
+                error={stepErrors.pincodeVal}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* ============================================================== */}
+        {/* STEP 4: KYC DOCUMENTS & IDENTITY */}
+        {/* ============================================================== */}
+        {currentStep === 4 && (
+          <View>
+            <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+              Enter government identification numbers and upload the 4 mandatory KYC documents.
+            </Text>
+
+            {/* Quick Auto-Upload All KYC Documents Button */}
+            <View style={[styles.quickKycBanner, { backgroundColor: `${colors.primary}12`, borderColor: colors.primary }]}>
+              <Icon name="shield-check" size={24} color={colors.primary} style={{ marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.quickKycTitle, { color: colors.text }]}>One-Tap Verified KYC Upload</Text>
+                <Text style={[styles.quickKycSubtext, { color: colors.textSecondary }]}>
+                  Automatically generate and verify all 4 KYC documents against backend storage.
                 </Text>
-                <Text style={styles.quotaSubtext}>
-                  {isNodeFull
-                    ? 'This territory node has reached its maximum manager capacity of 2. Registration is disabled.'
-                    : 'Territory node capacity permits registration.'}
+                <TouchableOpacity
+                  style={[styles.quickKycButton, { backgroundColor: colors.primary }]}
+                  onPress={handleAutoUploadAllKYC}
+                  disabled={isUploadingAllKyc}
+                >
+                  {isUploadingAllKyc ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.quickKycButtonText}>⚡ Auto-Verify All 4 Documents</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Government ID Numbers</Text>
+
+              <FICTextInput
+                label="Aadhaar Number (12 digits) *"
+                placeholder="e.g. 9876 5432 1012"
+                value={aadharNumber}
+                onChangeText={(val) => setAadharNumber(val.replace(/\D/g, '').slice(0, 12))}
+                keyboardType="numeric"
+                error={stepErrors.aadharNumber}
+              />
+
+              <FICTextInput
+                label="PAN Card Number (10 characters) *"
+                placeholder="e.g. ABCDE1234F"
+                value={panNumber}
+                onChangeText={(val) => setPanNumber(val.toUpperCase().slice(0, 10))}
+                autoCapitalize="characters"
+                error={stepErrors.panNumber}
+              />
+            </View>
+
+            {/* 4 KYC DOCUMENT CARDS */}
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Mandatory KYC Documents (4 Required)</Text>
+
+              {/* 1. Aadhaar Card */}
+              {renderDocUploadCard({
+                docType: 'aadhar',
+                title: '1. Aadhaar Card (Front/Back) *',
+                isUploaded: Boolean(uploadedAadharUrl),
+                fileName: uploadedAadharName,
+                isUploading: uploadingDocType === 'aadhar',
+                colors,
+              })}
+
+              {/* 2. PAN Card */}
+              {renderDocUploadCard({
+                docType: 'pan',
+                title: '2. PAN Card *',
+                isUploaded: Boolean(uploadedPanUrl),
+                fileName: uploadedPanName,
+                isUploading: uploadingDocType === 'pan',
+                colors,
+              })}
+
+              {/* 3. Bank Passbook */}
+              {renderDocUploadCard({
+                docType: 'bank',
+                title: '3. Bank Passbook / Cheque *',
+                isUploaded: Boolean(uploadedBankUrl),
+                fileName: uploadedBankName,
+                isUploading: uploadingDocType === 'bank',
+                colors,
+              })}
+
+              {/* 4. Digital Signature */}
+              {renderDocUploadCard({
+                docType: 'signature',
+                title: '4. Digital Signature *',
+                isUploaded: Boolean(uploadedSigUrl),
+                fileName: uploadedSigName,
+                isUploading: uploadingDocType === 'signature',
+                colors,
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* ============================================================== */}
+        {/* STEP 5: BANK DETAILS & FINAL DECLARATION */}
+        {/* ============================================================== */}
+        {currentStep === 5 && (
+          <View>
+            <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+              Enter manager bank account details for payroll and review all registration information before submitting.
+            </Text>
+
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Manager Bank Account Details</Text>
+
+              <FICTextInput
+                label="Account Holder Name *"
+                placeholder="e.g. Tamil Selvan"
+                value={accountHolderName}
+                onChangeText={setAccountHolderName}
+                error={stepErrors.accountHolderName}
+              />
+
+              <FICTextInput
+                label="Bank Name *"
+                placeholder="e.g. State Bank of India"
+                value={bankName}
+                onChangeText={setBankName}
+                error={stepErrors.bankName}
+              />
+
+              <FICTextInput
+                label="Branch Name *"
+                placeholder="e.g. Ariyalur Main Branch"
+                value={branchName}
+                onChangeText={setBranchName}
+                error={stepErrors.branchName}
+              />
+
+              <FICTextInput
+                label="City *"
+                placeholder="e.g. Ariyalur"
+                value={city}
+                onChangeText={setCity}
+                error={stepErrors.city}
+              />
+
+              <FICTextInput
+                label="Account Number *"
+                placeholder="9 to 18 digits"
+                value={accountNumber}
+                onChangeText={(val) => setAccountNumber(val.replace(/\s/g, ''))}
+                keyboardType="numeric"
+                error={stepErrors.accountNumber}
+              />
+
+              <FICTextInput
+                label="Confirm Account Number *"
+                placeholder="Re-enter account number"
+                value={confirmAccountNumber}
+                onChangeText={(val) => setConfirmAccountNumber(val.replace(/\s/g, ''))}
+                keyboardType="numeric"
+                error={stepErrors.confirmAccountNumber}
+              />
+
+              <FICTextInput
+                label="IFSC Code *"
+                placeholder="e.g. SBIN0001234"
+                value={ifscCode}
+                onChangeText={(val) => setIfscCode(val.toUpperCase())}
+                autoCapitalize="characters"
+                error={stepErrors.ifscCode}
+              />
+            </View>
+
+            {/* Application Summary Review */}
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Application Review Summary</Text>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Role Tier:</Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>{activeBackendRole.replace('_', ' ').toUpperCase()}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Territory:</Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>
+                  {[selectedDistrictName, selectedStateName].filter(Boolean).join(', ')}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Manager Name:</Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>{fullName}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Email:</Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>{email}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Mobile Phone:</Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>{mobile}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Documents:</Text>
+                <Text style={[styles.summaryValue, { color: '#16A34A', fontWeight: '700' }]}>
+                  4 / 4 KYC Documents Attached ✓
                 </Text>
               </View>
             </View>
-          ) : null}
-        </View>
 
-        {/* 3. MANAGER CREDENTIALS */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>3. Manager Details</Text>
-          <FICTextInput
-            label="Full Legal Name *"
-            placeholder="e.g. Anand Sharma"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-          <FICTextInput
-            label="Official Email *"
-            placeholder="anand.s@forgeindia.in"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <FICTextInput
-            label="Mobile Phone *"
-            placeholder="10-digit mobile number"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-          />
-          <FICTextInput
-            label="Password *"
-            placeholder="Create password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-        </View>
-
-        <FICButton
-          title={isNodeFull ? 'Territory Node Full — Cannot Register' : 'Submit Registration'}
-          onPress={handleSubmitRegistration}
-          loading={isSubmitting}
-          disabled={isNodeFull}
-          style={isNodeFull ? { ...styles.submitButton, ...styles.disabledButton } : styles.submitButton}
-        />
+            {/* Declaration Checkbox */}
+            <TouchableOpacity
+              style={styles.declarationRow}
+              onPress={() => setDeclarationAccepted(!declarationAccepted)}
+              activeOpacity={0.7}
+            >
+              <Icon
+                name={declarationAccepted ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                size={22}
+                color={declarationAccepted ? colors.primary : '#94A3B8'}
+                style={{ marginRight: 10, marginTop: 2 }}
+              />
+              <Text style={[styles.declarationText, { color: colors.textSecondary }]}>
+                I hereby declare that all information submitted is true, accurate, and verifiable. I understand that administrative activation is required before accessing the system.
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <TouchableOpacity style={styles.loginLink} onPress={onBackToLogin} activeOpacity={0.7}>
-          <Text style={styles.loginLinkText}>
-            Already have an active account? <Text style={styles.loginLinkBold}>Sign In</Text>
+          <Text style={[styles.loginLinkText, { color: colors.textSecondary }]}>
+            Already have an active manager account? <Text style={[styles.loginLinkBold, { color: colors.primary }]}>Sign In</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* FIXED BOTTOM ACTION BAR */}
+      <View style={[styles.bottomActionBar, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.border }]}>
+        {currentStep > 1 && (
+          <TouchableOpacity
+            style={[styles.prevButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
+            onPress={handlePrevStep}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.prevButtonText, { color: colors.text }]}>← Back</Text>
+          </TouchableOpacity>
+        )}
+        <View style={{ flex: 1, marginLeft: currentStep > 1 ? 12 : 0 }}>
+          {currentStep < 5 ? (
+            <FICButton
+              title={`Next: ${STEP_TITLES[currentStep]} →`}
+              onPress={handleNextStep}
+              disabled={Boolean(currentStep === 1 && capacityInfo && capacityInfo.isFull)}
+            />
+          ) : (
+            <FICButton
+              title="Submit Registration"
+              onPress={handleSubmitRegistration}
+              loading={isSubmitting}
+              disabled={!declarationAccepted || Boolean(capacityInfo && capacityInfo.isFull)}
+            />
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
+
+  // Document Card Renderer
+  function renderDocUploadCard({
+    docType,
+    title,
+    isUploaded,
+    fileName,
+    isUploading,
+    colors: themeColors,
+  }: {
+    docType: 'aadhar' | 'pan' | 'bank' | 'signature';
+    title: string;
+    isUploaded: boolean;
+    fileName?: string;
+    isUploading: boolean;
+    colors: any;
+  }) {
+    return (
+      <View
+        key={docType}
+        style={[
+          styles.docUploadCard,
+          { backgroundColor: themeColors.surfaceElevated, borderColor: themeColors.border },
+          isUploaded && { borderColor: '#10B981', backgroundColor: '#10B98108' },
+        ]}
+      >
+        <View style={styles.docHeaderRow}>
+          <Text style={[styles.docCardTitle, { color: themeColors.text }]}>{title}</Text>
+          {isUploaded ? (
+            <View style={styles.docBadgeSuccess}>
+              <Icon name="check-circle" size={14} color="#166534" style={{ marginRight: 4 }} />
+              <Text style={styles.docBadgeSuccessText}>Uploaded</Text>
+            </View>
+          ) : (
+            <View style={styles.docBadgePending}>
+              <Text style={styles.docBadgePendingText}>Required</Text>
+            </View>
+          )}
+        </View>
+
+        {isUploaded && fileName ? (
+          <Text style={[styles.docFileNameText, { color: themeColors.textMuted }]} numberOfLines={1}>
+            📄 {fileName}
+          </Text>
+        ) : null}
+
+        {isUploading ? (
+          <View style={styles.uploadingBox}>
+            <ActivityIndicator size="small" color={themeColors.primary} />
+            <Text style={[styles.uploadingText, { color: themeColors.primary }]}>Uploading to storage...</Text>
+          </View>
+        ) : (
+          <View style={styles.docActionsRow}>
+            <TouchableOpacity
+              style={[styles.docActionBtn, { backgroundColor: themeColors.surface, borderColor: themeColors.border }]}
+              onPress={() => handleCaptureRealPhoto(docType, 'camera')}
+            >
+              <Icon name="camera" size={16} color={themeColors.text} style={{ marginRight: 4 }} />
+              <Text style={[styles.docActionBtnText, { color: themeColors.text }]}>Camera</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.docActionBtn, { backgroundColor: themeColors.surface, borderColor: themeColors.border }]}
+              onPress={() => handleCaptureRealPhoto(docType, 'gallery')}
+            >
+              <Icon name="image" size={16} color={themeColors.text} style={{ marginRight: 4 }} />
+              <Text style={[styles.docActionBtnText, { color: themeColors.text }]}>Gallery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.docActionBtn, { backgroundColor: `${themeColors.primary}15`, borderColor: themeColors.primary }]}
+              onPress={() => handleAutoVerifyTemplate(docType)}
+            >
+              <Icon name="file-check" size={16} color={themeColors.primary} style={{ marginRight: 4 }} />
+              <Text style={[styles.docActionBtnText, { color: themeColors.primary, fontWeight: '700' }]}>Verify</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  }
 };
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   backButton: {
-    padding: 4,
+    padding: 6,
+    marginRight: 4,
+  },
+  headerCenter: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#0F172A',
+  },
+  stepSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  progressBarBackground: {
+    height: 4,
+    width: '100%',
+  },
+  progressBarFill: {
+    height: 4,
+  },
+  stepTabsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  stepTabPill: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepTabPillText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   container: {
     flex: 1,
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
   sectionSubtitle: {
     fontSize: 13,
-    color: '#64748B',
     lineHeight: 18,
     marginBottom: 16,
   },
   sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 12,
+    borderWidth: 1,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   roleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   roleChip: {
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: '#F1F5F9',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  activeRoleChip: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#2563EB',
   },
   roleChipText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#334155',
-  },
-  activeRoleChipText: {
-    color: '#1D4ED8',
-    fontWeight: '700',
+    fontWeight: '500',
   },
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#334155',
-    marginTop: 10,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   districtHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 6,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   selectedDistrictBadgeContainer: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
   },
   selectedDistrictBadgeText: {
-    fontSize: 11.5,
+    fontSize: 12,
+    color: '#166534',
     fontWeight: '700',
-    color: '#1D4ED8',
   },
   searchBoxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    height: 42,
   },
   searchIcon: {
-    marginRight: 6,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 12.5,
-    color: '#0F172A',
-    paddingVertical: 2,
+    fontSize: 13,
+    paddingVertical: 0,
   },
   districtScrollView: {
-    maxHeight: 180,
-    marginBottom: 8,
-  },
-  customOptionPill: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#F59E0B',
-  },
-  customOptionPillText: {
-    fontSize: 12,
-    color: '#92400E',
-    fontWeight: '700',
+    maxHeight: 160,
+    borderRadius: 8,
   },
   pillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
+    gap: 6,
+    paddingBottom: 4,
   },
   optionPill: {
+    paddingVertical: 7,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#F8FAFC',
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  activeOptionPill: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
+    marginBottom: 4,
   },
   optionPillText: {
     fontSize: 12,
-    color: '#475569',
     fontWeight: '500',
-  },
-  activeOptionPillText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
   },
   placeholderText: {
     fontSize: 12,
     color: '#94A3B8',
     fontStyle: 'italic',
-    marginBottom: 8,
+    paddingVertical: 8,
   },
   quotaIndicatorBox: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     padding: 12,
-    borderRadius: 10,
-    marginTop: 12,
+    borderRadius: 8,
     borderWidth: 1,
+    marginTop: 14,
   },
   quotaBoxAvailable: {
     backgroundColor: '#F0FDF4',
-    borderColor: '#DCFCE7',
+    borderColor: '#BBF7D0',
   },
   quotaBoxFull: {
     backgroundColor: '#FEF2F2',
-    borderColor: '#FEE2E2',
+    borderColor: '#FECACA',
   },
   quotaTitleText: {
     fontSize: 13,
@@ -990,27 +1732,200 @@ const styles = StyleSheet.create({
   },
   quotaSubtext: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#475569',
     lineHeight: 15,
   },
-  submitButton: {
-    marginTop: 8,
-    marginBottom: 16,
+  quickDobRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    marginBottom: 10,
   },
-  disabledButton: {
-    backgroundColor: '#94A3B8',
-    borderColor: '#94A3B8',
+  quickDobLabel: {
+    fontSize: 12,
+  },
+  quickDobPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginLeft: 6,
+  },
+  quickDobPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  genderRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  genderPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  genderText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  bottomActionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  prevButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  prevButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  quickKycBanner: {
+    flexDirection: 'row',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  quickKycTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  quickKycSubtext: {
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  quickKycButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  quickKycButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  docUploadCard: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 12,
+  },
+  docHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  docCardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  docBadgeSuccess: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  docBadgeSuccessText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#166534',
+  },
+  docBadgePending: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  docBadgePendingText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  docFileNameText: {
+    fontSize: 11,
+    marginBottom: 8,
+  },
+  uploadingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  uploadingText: {
+    fontSize: 12,
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  docActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  docActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  docActionBtnText: {
+    fontSize: 12,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E2E8F0',
+  },
+  summaryLabel: {
+    fontSize: 13,
+  },
+  summaryValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    maxWidth: '65%',
+    textAlign: 'right',
+  },
+  declarationRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginVertical: 14,
+    paddingHorizontal: 4,
+  },
+  declarationText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
   },
   loginLink: {
     alignItems: 'center',
+    marginTop: 16,
     paddingVertical: 8,
   },
   loginLinkText: {
     fontSize: 13,
-    color: '#64748B',
   },
   loginLinkBold: {
-    color: '#1D4ED8',
     fontWeight: '700',
   },
 });
