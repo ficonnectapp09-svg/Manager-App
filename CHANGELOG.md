@@ -4,6 +4,62 @@ All notable changes to the FIC Manager Application repository will be documented
 
 ---
 
+## [1.5.0] - 2026-11-17 – Critical Performance Fix: Instant Frame-0 Dashboard Loading & Stale-While-Revalidate Caching
+
+### Fixed
+- **Eliminated Full-Screen Blocking Spinner**: Removed `<FICLoadingState message="Loading dashboard..." />` and full-screen blocking `<FICErrorState />` in `DashboardScreen.tsx`.
+- **Instant Frame-0 Rendering**: Dashboard shell, hero greeting, top bar, and KPI card layout mount immediately (0ms) upon opening the application without hanging on an indefinite loader.
+- **Stale-While-Revalidate (SWR) Local & Persistent Caching**:
+  - `IDashboardRepository.ts`: Added `getCachedSummary` and `getCachedActivities` signatures.
+  - `HttpDashboardRepository.ts`: Implemented dual-layer caching (in-memory Map and persistent SharedPreferences via `PersistentStorageService`) under keys `DASHBOARD_SUMMARY_${managerId}` and `DASHBOARD_ACTIVITIES_${managerId}`.
+  - `DashboardScreen.tsx`: Immediately hydrates metrics and recent activities from disk on mount before initiating background network sync.
+- **Independent Non-Blocking Network Sync & Error Handling**:
+  - Analytical queries (`/api/reports/dashboard`) execute in background with an extended 60s timeout.
+  - Replaced disruptive full-screen error overlays with a non-intrusive, dismissible top banner that allows users to freely use the app while notifying them if offline or timed out.
+  - Added localized loading indicator within the recent activities card and pull-to-refresh integration.
+
+### Preserved
+- All existing KPI metrics, dark mode theme tokens, navigation routes, drawer actions, and authentic backend data sources are strictly preserved.
+- No dummy, hardcoded or mock production data introduced.
+
+---
+
+## [1.4.0] - 2026-11-16 – Bug Fixes: Registration, KYC, Notifications & Reports
+
+### Fixed
+
+#### Issue 1 – Indian PIN Code Validation
+- `src/validators/index.ts`: Added `INDIAN_PINCODE_REGEX = /^[1-9]\d{5}$/` and `isValidIndianPincode()` helper.
+- Registration form now strictly enforces 6-digit PIN codes where the first digit is 1–9; rejects letters, special characters, incomplete codes and codes starting with 0.
+- Postal lookup failure (`LOOKUP_FAILED`) is treated as a non-blocking warning; registration is not blocked when the postal service is unreachable.
+
+#### Issue 2 – State Selection Dropdown
+- `src/components/ui/FICDropdownModal.tsx` (new): Reusable searchable bottom-sheet modal with real-time text filtering, drag handle, checkmark indicator and empty-state label.
+- `src/features/auth/RegisterScreen.tsx`: Replaced the pill-button cloud of 30+ state buttons with a single clean dropdown trigger that opens `FICDropdownModal`. Full 36-state list is searchable in the modal.
+
+#### Issue 3 – District Selection Dropdown
+- `src/features/auth/RegisterScreen.tsx`: District selector is now a searchable `FICDropdownModal` gated behind State selection. District list resets automatically whenever the selected State changes. Backend territory-slot availability is re-fetched on district confirmation.
+
+#### Issue 4 – KYC Aadhaar Input & Validation
+- `src/features/auth/RegisterScreen.tsx`: Aadhaar field enforces `inputMode="numeric"`, `maxLength={12}`, auto-strips non-digit characters on change, and shows a consistent error message: *"Aadhaar number must be exactly 12 digits"*.
+
+#### Issue 5 – Manager Profile Photo Upload (Mobile)
+- Profile photo upload now streams the selected image to the shared Cloudinary `manager_avatars` folder via `POST /api/uploads/photo`.
+- Returned secure URL is persisted to `users` and `managers` collections in the shared backend database.
+
+#### Issue 6 – Notification Click Navigation
+- `src/services/repositories/http/HttpNotificationRepository.ts`: MongoDB notification payloads are normalized; deep-link route mappings added for `VendorDetail`, `TaskDetail`, `ReportDetail`, `IssueDetail`, and `Dashboard`.
+- `src/features/notifications/NotificationsScreen.tsx`: `handleNotificationPress` resolves routes from notification `type` and `entityType` fields with a safe fallback to `Dashboard` to prevent blank or crash screens.
+
+#### Issue 7 – Reports & Issues Tab Empty State and Filter
+- `src/features/notifications/NotificationsScreen.tsx`: Tab filter logic updated to match backend event types (`shop_visit` → Reports, `ticket_assigned` → Issues). Custom empty states render *"No Reports Found"* and *"No Issues Found"* instead of a generic empty list.
+
+### Preserved
+- All existing screens, navigation, business logic, dark mode palette tokens and `ThemeContext` are unchanged.
+- Backend database schema, API contracts, and authentication workflows are unmodified.
+
+---
+
 ## [1.3.0] - Safe Removal of Unused Files & Permanent Audit Rules
 
 ### Removed

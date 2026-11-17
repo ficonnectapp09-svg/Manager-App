@@ -17,7 +17,52 @@ export class HttpNotificationRepository implements INotificationRepository {
       token,
       params: { managerId },
     });
-    const list = Array.isArray(response.data) ? response.data : (Array.isArray((response as any).notifications) ? (response as any).notifications : []);
+    const rawList = Array.isArray(response.data)
+      ? response.data
+      : (Array.isArray((response as any).notifications)
+        ? (response as any).notifications
+        : []);
+
+    const list: AppNotification[] = rawList.map((raw: any) => {
+      const typeStr = String(raw.type || raw.category || '').toLowerCase();
+      const titleStr = String(raw.title || '').toLowerCase();
+      const recordId = raw.recordId || raw.metadata?.recordId || raw.metadata?.id || '';
+
+      let deepLinkScreen = raw.deepLinkScreen || '';
+      let deepLinkParams = raw.deepLinkParams || {};
+
+      if (!deepLinkScreen) {
+        if (typeStr.includes('vendor') || titleStr.includes('vendor') || titleStr.includes('merchant')) {
+          deepLinkScreen = recordId ? 'VendorDetail' : 'Vendors';
+          if (recordId) deepLinkParams = { vendorId: recordId };
+        } else if (typeStr.includes('task') || titleStr.includes('task')) {
+          deepLinkScreen = recordId ? 'TaskDetail' : 'Tasks';
+          if (recordId) deepLinkParams = { taskId: recordId };
+        } else if (typeStr.includes('report') || typeStr.includes('visit') || titleStr.includes('report') || titleStr.includes('visit')) {
+          deepLinkScreen = recordId ? 'ReportDetail' : 'Reports';
+          if (recordId) deepLinkParams = { reportId: recordId };
+        } else if (typeStr.includes('issue') || typeStr.includes('ticket') || titleStr.includes('issue') || titleStr.includes('ticket')) {
+          deepLinkScreen = recordId ? 'IssueDetail' : 'Issues';
+          if (recordId) deepLinkParams = { issueId: recordId };
+        } else if (typeStr.includes('order') || typeStr.includes('booking') || titleStr.includes('order') || titleStr.includes('booking')) {
+          deepLinkScreen = 'Dashboard';
+        }
+      }
+
+      return {
+        id: String(raw._id || raw.id || `notif_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`),
+        title: raw.title || 'Notification',
+        body: raw.message || raw.body || '',
+        category: raw.category || raw.type || 'system',
+        priority: raw.priority || 'MEDIUM',
+        targetManagerId: raw.userId || raw.targetManagerId || '',
+        isRead: Boolean(raw.isRead),
+        deepLinkScreen: deepLinkScreen || undefined,
+        deepLinkParams: Object.keys(deepLinkParams).length > 0 ? deepLinkParams : undefined,
+        createdAt: raw.createdAt || new Date().toISOString(),
+      };
+    });
+
     return list;
   }
 

@@ -30,4 +30,6 @@ export interface DashboardSummaryData {
 export interface IDashboardRepository {
   getDashboardSummary(managerId: string): Promise<DashboardSummaryData>;
   getRecentActivities(managerId: string, limit?: number): Promise<Activity[]>;
+  getCachedSummary?(managerId: string): Promise<DashboardSummaryData | null>;
+  getCachedActivities?(managerId: string): Promise<Activity[] | null>;
 }

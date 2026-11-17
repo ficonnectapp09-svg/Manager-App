@@ -135,9 +135,34 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
       }
     }
 
-    // 2. Deep link navigation if valid destination exists
-    if (notification.deepLinkScreen && onNavigateRoute) {
-      onNavigateRoute(notification.deepLinkScreen, notification.deepLinkParams);
+    // 2. Deep link navigation with fallback resolver
+    let targetScreen = notification.deepLinkScreen;
+    let targetParams = notification.deepLinkParams;
+
+    if (!targetScreen) {
+      const typeStr = String(notification.category || (notification as any).type || '').toLowerCase();
+      const titleStr = String(notification.title || '').toLowerCase();
+      const recordId = (notification as any).recordId || notification.deepLinkParams?.id || (notification as any).metadata?.recordId;
+
+      if (typeStr.includes('vendor') || titleStr.includes('vendor') || titleStr.includes('merchant')) {
+        targetScreen = recordId ? 'VendorDetail' : 'Vendors';
+        targetParams = recordId ? { vendorId: recordId } : undefined;
+      } else if (typeStr.includes('task') || titleStr.includes('task')) {
+        targetScreen = recordId ? 'TaskDetail' : 'Tasks';
+        targetParams = recordId ? { taskId: recordId } : undefined;
+      } else if (typeStr.includes('report') || typeStr.includes('visit') || titleStr.includes('report') || titleStr.includes('visit')) {
+        targetScreen = recordId ? 'ReportDetail' : 'Reports';
+        targetParams = recordId ? { reportId: recordId } : undefined;
+      } else if (typeStr.includes('issue') || typeStr.includes('ticket') || titleStr.includes('issue') || titleStr.includes('ticket')) {
+        targetScreen = recordId ? 'IssueDetail' : 'Issues';
+        targetParams = recordId ? { issueId: recordId } : undefined;
+      } else if (typeStr.includes('order') || typeStr.includes('booking') || titleStr.includes('order') || titleStr.includes('booking')) {
+        targetScreen = 'Dashboard';
+      }
+    }
+
+    if (targetScreen && onNavigateRoute) {
+      onNavigateRoute(targetScreen, targetParams);
     }
   };
 
@@ -145,13 +170,55 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
     if (selectedCategory === 'ALL') return notifications;
     return notifications.filter(n => {
       const cat = String(n.category || (n as any).type || '').toLowerCase();
-      if (selectedCategory === 'TASKS') return cat.includes('task');
-      if (selectedCategory === 'REPORTS') return cat.includes('report');
-      if (selectedCategory === 'VENDORS') return cat.includes('vendor');
-      if (selectedCategory === 'ISSUES') return cat.includes('issue');
-      return true;
+      const title = String(n.title || '').toLowerCase();
+      const body = String(n.body || (n as any).message || '').toLowerCase();
+
+      if (selectedCategory === 'TASKS') {
+        return cat.includes('task') || title.includes('task') || body.includes('task');
+      }
+      if (selectedCategory === 'REPORTS') {
+        return cat.includes('report') || cat.includes('visit') || title.includes('report') || title.includes('visit') || body.includes('report');
+      }
+      if (selectedCategory === 'VENDORS') {
+        return cat.includes('vendor') || cat.includes('merchant') || title.includes('vendor') || title.includes('merchant') || body.includes('vendor');
+      }
+      if (selectedCategory === 'ISSUES') {
+        return cat.includes('issue') || cat.includes('ticket') || title.includes('issue') || title.includes('ticket') || body.includes('ticket') || body.includes('dispute');
+      }
+      return false;
     });
   }, [notifications, selectedCategory]);
+
+  const emptyStateContent = useMemo(() => {
+    switch (selectedCategory) {
+      case 'REPORTS':
+        return {
+          title: 'No Reports Found',
+          description: 'No report notifications available for your territory.',
+        };
+      case 'ISSUES':
+        return {
+          title: 'No Issues Found',
+          description: 'No issue notifications available for your territory.',
+        };
+      case 'TASKS':
+        return {
+          title: 'No Tasks Found',
+          description: 'No task notifications available.',
+        };
+      case 'VENDORS':
+        return {
+          title: 'No Vendors Found',
+          description: 'No vendor notifications available.',
+        };
+      case 'ALL':
+      default:
+        return {
+          title: 'No Notifications',
+          description: "You're all caught up.",
+        };
+    }
+  }, [selectedCategory]);
 
   if (isLoading && !isRefreshing) {
     return <FICLoadingState message="Loading notifications..." />;
@@ -244,8 +311,8 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
           }
           ListEmptyComponent={
             <FICEmptyState
-              title="No Notifications"
-              description="No notifications match the selected category."
+              title={emptyStateContent.title}
+              description={emptyStateContent.description}
             />
           }
         />

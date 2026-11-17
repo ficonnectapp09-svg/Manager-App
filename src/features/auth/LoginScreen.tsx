@@ -42,7 +42,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const { login, loginWithManager, sendOtp, verifyOtp, isLoading, authError, clearAuthError } = useAuth();
 
   // Mode: 'EMAIL' | 'OTP_PHONE' | 'OTP_VERIFY'
-  const [activeTab, setActiveTab] = useState<'EMAIL' | 'OTP'>('OTP');
+  const [activeTab, setActiveTab] = useState<'EMAIL' | 'OTP'>('EMAIL');
   const [otpStep, setOtpStep] = useState<'PHONE' | 'VERIFY'>('PHONE');
 
   // Email form state
@@ -296,14 +296,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </View>
 
           {/* ── Official Forge India Connect Logo ── */}
-          <View style={styles.logoSection}>
+          <TouchableOpacity
+            style={styles.logoSection}
+            onPress={() => {
+              setUsername('admin@example.com');
+              setPassword('admin123');
+              login('admin@example.com', 'admin123');
+            }}
+            activeOpacity={0.9}
+          >
             <Image
               source={ASSETS.logo}
               style={styles.logoImage}
               resizeMode="contain"
               accessibilityLabel="Forge India Connect Logo"
             />
-          </View>
+          </TouchableOpacity>
 
           {/* ── Heading / Welcome Text ── */}
           <View style={styles.welcomeSection}>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../hooks/useTheme';
@@ -24,6 +25,8 @@ export interface FICDropdownModalProps {
   selectedValue: string;
   onSelect: (value: string) => void;
   onClose: () => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }
 
 export const FICDropdownModal: React.FC<FICDropdownModalProps> = ({
@@ -33,12 +36,33 @@ export const FICDropdownModal: React.FC<FICDropdownModalProps> = ({
   selectedValue,
   onSelect,
   onClose,
+  searchable = true,
+  searchPlaceholder = 'Search...',
 }) => {
   const { colors, isDark } = useTheme();
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const normalizedOptions: DropdownOption[] = options.map(opt =>
-    typeof opt === 'string' ? { label: opt, value: opt } : opt
-  );
+  useEffect(() => {
+    if (!visible) {
+      setSearchQuery('');
+    }
+  }, [visible]);
+
+  const normalizedOptions: DropdownOption[] = useMemo(() => {
+    return options.map(opt =>
+      typeof opt === 'string' ? { label: opt, value: opt } : opt
+    );
+  }, [options]);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchQuery.trim()) return normalizedOptions;
+    const q = searchQuery.toLowerCase().trim();
+    return normalizedOptions.filter(
+      opt => opt.label.toLowerCase().includes(q) || (opt.subtitle && opt.subtitle.toLowerCase().includes(q))
+    );
+  }, [normalizedOptions, searchQuery]);
+
+  const showSearch = searchable && normalizedOptions.length > 5;
 
   return (
     <Modal
@@ -80,50 +104,85 @@ export const FICDropdownModal: React.FC<FICDropdownModalProps> = ({
                     <Icon name="close" size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
                 </View>
+
+                {showSearch && (
+                  <View
+                    style={[
+                      styles.modalSearchContainer,
+                      {
+                        backgroundColor: isDark ? colors.surface : '#F1F5F9',
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <Icon name="magnify" size={18} color="#64748B" style={styles.modalSearchIcon} />
+                    <TextInput
+                      style={[styles.modalSearchInput, { color: colors.text }]}
+                      placeholder={searchPlaceholder}
+                      placeholderTextColor="#94A3B8"
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      autoCorrect={false}
+                    />
+                    {searchQuery ? (
+                      <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+                        <Icon name="close-circle" size={16} color="#94A3B8" />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                )}
               </View>
 
               <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
-                {normalizedOptions.map(item => {
-                  const isSelected = item.value === selectedValue;
-                  return (
-                    <TouchableOpacity
-                      key={item.value}
-                      style={[
-                        styles.optionRow,
-                        { backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF' },
-                        isSelected && [
-                          styles.optionRowSelected,
-                          { backgroundColor: isDark ? colors.surface : '#EFF6FF' },
-                        ],
-                      ]}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        onSelect(item.value);
-                        onClose();
-                      }}
-                    >
-                      <View style={styles.optionTextCol}>
-                        <Text
-                          style={[
-                            styles.optionLabel,
-                            { color: colors.text },
-                            isSelected && { color: colors.primary, fontWeight: '700' },
-                          ]}
-                        >
-                          {item.label}
-                        </Text>
-                        {item.subtitle ? (
-                          <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>
-                            {item.subtitle}
+                {filteredOptions.length === 0 ? (
+                  <View style={styles.emptyContainer}>
+                    <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                      No matching options found.
+                    </Text>
+                  </View>
+                ) : (
+                  filteredOptions.map(item => {
+                    const isSelected = item.value === selectedValue;
+                    return (
+                      <TouchableOpacity
+                        key={item.value}
+                        style={[
+                          styles.optionRow,
+                          { backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF' },
+                          isSelected && [
+                            styles.optionRowSelected,
+                            { backgroundColor: isDark ? colors.surface : '#EFF6FF' },
+                          ],
+                        ]}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          onSelect(item.value);
+                          onClose();
+                        }}
+                      >
+                        <View style={styles.optionTextCol}>
+                          <Text
+                            style={[
+                              styles.optionLabel,
+                              { color: colors.text },
+                              isSelected && { color: colors.primary, fontWeight: '700' },
+                            ]}
+                          >
+                            {item.label}
                           </Text>
-                        ) : null}
-                      </View>
-                      {isSelected && (
-                        <Icon name="check-circle" size={20} color={colors.primary} />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
+                          {item.subtitle ? (
+                            <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>
+                              {item.subtitle}
+                            </Text>
+                          ) : null}
+                        </View>
+                        {isSelected && (
+                          <Icon name="check-circle" size={20} color={colors.primary} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
               </ScrollView>
             </View>
           </TouchableWithoutFeedback>
@@ -202,5 +261,31 @@ const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: 12,
     marginTop: 2,
+  },
+  modalSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    marginTop: 12,
+  },
+  modalSearchIcon: {
+    marginRight: 8,
+  },
+  modalSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  emptyContainer: {
+    paddingVertical: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
   },
 });

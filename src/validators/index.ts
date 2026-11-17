@@ -4,7 +4,7 @@
  */
 
 export const INDIAN_PHONE_REGEX = /^[6-9]\d{9}$/;
-export const INDIAN_PINCODE_REGEX = /^\d{6}$/;
+export const INDIAN_PINCODE_REGEX = /^[1-9]\d{5}$/;
 export const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 export const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,6 +15,14 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const isValidIndianPhone = (phone?: string): boolean => {
   if (!phone) return false;
   return INDIAN_PHONE_REGEX.test(phone.trim());
+};
+
+/**
+ * Validates standard 6-digit Indian PIN code starting with 1-9
+ */
+export const isValidIndianPincode = (pincode?: string): boolean => {
+  if (!pincode) return false;
+  return INDIAN_PINCODE_REGEX.test(pincode.trim().replace(/\D/g, ''));
 };
 
 /**

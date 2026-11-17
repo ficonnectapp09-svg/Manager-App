@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ManagerRole } from '../../types';
 import { FICTextInput } from '../../components/ui/FICTextInput';
 import { FICButton } from '../../components/ui/FICButton';
+import { FICDropdownModal } from '../../components/ui/FICDropdownModal';
 import { useTheme } from '../../hooks/useTheme';
 import { cameraLocationService } from '../../services/camera/CameraLocationService';
 import {
@@ -87,6 +88,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
   const [stateSearchQuery, setStateSearchQuery] = useState<string>('');
   const [districtSearchQuery, setDistrictSearchQuery] = useState<string>('');
+  const [isStateDropdownOpen, setIsStateDropdownOpen] = useState<boolean>(false);
+  const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState<boolean>(false);
 
   const [isLoadingTerritories, setIsLoadingTerritories] = useState<boolean>(false);
   const [capacityInfo, setCapacityInfo] = useState<CapacityCheckResult | null>(null);
@@ -759,73 +762,47 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>2. Territory Jurisdiction</Text>
 
-              {/* State Header */}
-              <View style={styles.districtHeaderRow}>
-                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>State *</Text>
-                {selectedStateName ? (
-                  <View style={styles.selectedDistrictBadgeContainer}>
-                    <Text style={styles.selectedDistrictBadgeText}>✓ {selectedStateName}</Text>
-                  </View>
-                ) : null}
-              </View>
-
-              {/* State Search */}
-              <View style={[styles.searchBoxContainer, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
-                <Icon name="magnify" size={18} color="#64748B" style={styles.searchIcon} />
-                <TextInput
-                  style={[styles.searchInput, { color: colors.text }]}
-                  placeholder="Search states (e.g. Tamil Nadu, Gujarat)..."
-                  placeholderTextColor="#94A3B8"
-                  value={stateSearchQuery}
-                  onChangeText={setStateSearchQuery}
-                />
-                {stateSearchQuery ? (
-                  <TouchableOpacity onPress={() => setStateSearchQuery('')} style={{ padding: 4 }}>
-                    <Icon name="close-circle" size={16} color="#94A3B8" />
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-
-              {/* State Options */}
-              <ScrollView
-                nestedScrollEnabled
-                style={styles.districtScrollView}
-                contentContainerStyle={styles.pillRow}
-                showsVerticalScrollIndicator={true}
-              >
-                {filteredStates.map((s) => {
-                  const sId = s._id || s.id || '';
-                  const isSelected = selectedState === sId;
-                  return (
-                    <TouchableOpacity
-                      key={sId}
+              {/* State Dropdown Selector */}
+              <View style={styles.dropdownFieldGroup}>
+                <View style={styles.districtHeaderRow}>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>State *</Text>
+                  {selectedStateName ? (
+                    <View style={styles.selectedDistrictBadgeContainer}>
+                      <Text style={styles.selectedDistrictBadgeText}>✓ {selectedStateName}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownTrigger,
+                    { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                    isStateDropdownOpen && { borderColor: colors.primary },
+                  ]}
+                  onPress={() => setIsStateDropdownOpen(true)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.dropdownTriggerContent}>
+                    <Icon name="map-marker" size={18} color={selectedStateName ? colors.primary : '#94A3B8'} style={{ marginRight: 8 }} />
+                    <Text
                       style={[
-                        styles.optionPill,
-                        { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
-                        isSelected && { borderColor: colors.primary, backgroundColor: `${colors.primary}20` },
+                        styles.dropdownTriggerText,
+                        { color: selectedStateName ? colors.text : '#94A3B8' },
                       ]}
-                      onPress={() => handleSelectState(s)}
+                      numberOfLines={1}
                     >
-                      <Text
-                        style={[
-                          styles.optionPillText,
-                          { color: colors.textSecondary },
-                          isSelected && { color: colors.primary, fontWeight: '700' },
-                        ]}
-                      >
-                        {s.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+                      {selectedStateName || 'Select State'}
+                    </Text>
+                  </View>
+                  <Icon name="chevron-down" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
 
-              {/* District Selection (for L2, L3, L4) */}
+              {/* District Dropdown Selector (for L2, L3, L4) */}
               {(selectedRole === ManagerRole.DISTRICT_MANAGER ||
                 selectedRole === ManagerRole.DIVISION_MANAGER ||
                 selectedRole === ManagerRole.PINCODE_MANAGER) && (
-                <>
-                  <View style={[styles.districtHeaderRow, { marginTop: 16 }]}>
+                <View style={[styles.dropdownFieldGroup, { marginTop: 14 }]}>
+                  <View style={styles.districtHeaderRow}>
                     <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>District *</Text>
                     {selectedDistrictName ? (
                       <View style={styles.selectedDistrictBadgeContainer}>
@@ -833,62 +810,38 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                       </View>
                     ) : null}
                   </View>
-
-                  {!selectedState ? (
-                    <Text style={styles.placeholderText}>Please select a State first.</Text>
-                  ) : (
-                    <>
-                      <View style={[styles.searchBoxContainer, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
-                        <Icon name="magnify" size={18} color="#64748B" style={styles.searchIcon} />
-                        <TextInput
-                          style={[styles.searchInput, { color: colors.text }]}
-                          placeholder="Search districts (e.g. Dharmapuri, Ariyalur, Chennai)..."
-                          placeholderTextColor="#94A3B8"
-                          value={districtSearchQuery}
-                          onChangeText={setDistrictSearchQuery}
-                        />
-                        {districtSearchQuery ? (
-                          <TouchableOpacity onPress={() => setDistrictSearchQuery('')} style={{ padding: 4 }}>
-                            <Icon name="close-circle" size={16} color="#94A3B8" />
-                          </TouchableOpacity>
-                        ) : null}
-                      </View>
-
-                      <ScrollView
-                        nestedScrollEnabled
-                        style={styles.districtScrollView}
-                        contentContainerStyle={styles.pillRow}
-                        showsVerticalScrollIndicator={true}
+                  <TouchableOpacity
+                    style={[
+                      styles.dropdownTrigger,
+                      { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                      !selectedState && { opacity: 0.6 },
+                      isDistrictDropdownOpen && { borderColor: colors.primary },
+                    ]}
+                    onPress={() => {
+                      if (!selectedState) {
+                        Alert.alert('Select State First', 'Please select a state before choosing a district.');
+                        return;
+                      }
+                      setIsDistrictDropdownOpen(true);
+                    }}
+                    disabled={!selectedState}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.dropdownTriggerContent}>
+                      <Icon name="city" size={18} color={selectedDistrictName ? colors.primary : '#94A3B8'} style={{ marginRight: 8 }} />
+                      <Text
+                        style={[
+                          styles.dropdownTriggerText,
+                          { color: selectedDistrictName ? colors.text : '#94A3B8' },
+                        ]}
+                        numberOfLines={1}
                       >
-                        {filteredDistricts.map((d) => {
-                          const dId = d._id || d.id || '';
-                          const isSelected = selectedDistrict === dId;
-                          return (
-                            <TouchableOpacity
-                              key={dId}
-                              style={[
-                                styles.optionPill,
-                                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
-                                isSelected && { borderColor: colors.primary, backgroundColor: `${colors.primary}20` },
-                              ]}
-                              onPress={() => handleSelectDistrict(d)}
-                            >
-                              <Text
-                                style={[
-                                  styles.optionPillText,
-                                  { color: colors.textSecondary },
-                                  isSelected && { color: colors.primary, fontWeight: '700' },
-                                ]}
-                              >
-                                {d.name}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </ScrollView>
-                    </>
-                  )}
-                </>
+                        {selectedDistrictName || (selectedState ? 'Select District' : 'Please select a State first')}
+                      </Text>
+                    </View>
+                    <Icon name="chevron-down" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
               )}
 
               {/* Division Selection (for L3, L4) */}
@@ -1468,6 +1421,40 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           )}
         </View>
       </View>
+
+      {/* State Selection Dropdown Modal */}
+      <FICDropdownModal
+        visible={isStateDropdownOpen}
+        title="Select State"
+        searchPlaceholder="Search states (e.g. Tamil Nadu, Kerala)..."
+        options={states.map(s => ({
+          label: s.name,
+          value: s._id || s.id || '',
+        }))}
+        selectedValue={selectedState}
+        onSelect={(stateId) => {
+          const foundState = states.find(s => (s._id || s.id) === stateId);
+          if (foundState) handleSelectState(foundState);
+        }}
+        onClose={() => setIsStateDropdownOpen(false)}
+      />
+
+      {/* District Selection Dropdown Modal */}
+      <FICDropdownModal
+        visible={isDistrictDropdownOpen}
+        title={`Select District (${selectedStateName || 'State'})`}
+        searchPlaceholder="Search districts (e.g. Coimbatore, Salem)..."
+        options={districts.map(d => ({
+          label: d.name,
+          value: d._id || d.id || '',
+        }))}
+        selectedValue={selectedDistrict}
+        onSelect={(districtId) => {
+          const foundDistrict = districts.find(d => (d._id || d.id) === districtId);
+          if (foundDistrict) handleSelectDistrict(foundDistrict);
+        }}
+        onClose={() => setIsDistrictDropdownOpen(false)}
+      />
     </SafeAreaView>
   );
 
@@ -1653,6 +1640,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  dropdownFieldGroup: {
+    marginBottom: 4,
+  },
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 46,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+  },
+  dropdownTriggerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  dropdownTriggerText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   selectedDistrictBadgeContainer: {
     backgroundColor: '#DCFCE7',

@@ -10,6 +10,7 @@ import {
   Image,
   Linking,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -19,8 +20,6 @@ import { services } from '../../services';
 import { socketService } from '../../services/realtime/SocketService';
 import { Activity } from '../../types';
 import { DashboardSummaryData } from '../../services/repositories/IDashboardRepository';
-import { FICLoadingState } from '../../components/feedback/FICLoadingState';
-import { FICErrorState } from '../../components/feedback/FICErrorState';
 import { FICAvatar } from '../../components/ui/FICAvatar';
 import { ASSETS } from '../../assets/logo';
 
@@ -41,14 +40,45 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const isFetchingRef = useRef<boolean>(false);
 
+  // Instant SWR Cache Hydration on Mount
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const managerId = manager?.id || 'mgr-000';
+        if (services.dashboardRepository.getCachedSummary) {
+          const cachedSum = await services.dashboardRepository.getCachedSummary(managerId);
+          if (cachedSum && isMounted) {
+            setSummary(cachedSum);
+            setIsLoading(false);
+          }
+        }
+        if (services.dashboardRepository.getCachedActivities) {
+          const cachedAct = await services.dashboardRepository.getCachedActivities(managerId);
+          if (cachedAct && cachedAct.length > 0 && isMounted) {
+            setActivities(cachedAct);
+          }
+        }
+      } catch (e) {
+        console.warn('[DashboardScreen] Cache hydration warning:', e);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [manager?.id]);
+
   const loadDashboardData = useCallback(async (isRefresh = false) => {
-    if (isFetchingRef.current) return;
+    if (isFetchingRef.current) {
+      if (isRefresh) setIsRefreshing(false);
+      return;
+    }
     isFetchingRef.current = true;
-    if (!isRefresh) setIsLoading(true);
-    setError(null);
+    if (isRefresh) setIsRefreshing(true);
+    setSyncError(null);
     try {
       const managerId = manager?.id || 'mgr-000';
       const [summaryRes, activityRes] = await Promise.all([
@@ -57,17 +87,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       ]);
       setSummary(summaryRes);
       setActivities(activityRes);
-      setError(null);
+      setSyncError(null);
     } catch (err: any) {
-      console.warn('[DashboardScreen] Error loading dashboard:', err);
+      console.warn('[DashboardScreen] Error refreshing dashboard:', err);
       if (err?.status === 401 || err?.code === 'UNAUTHORIZED' || err?.code === 'SESSION_REVOKED') {
-        setError('Your session has expired. Please log in again.');
+        setSyncError('Your session has expired. Please log in again.');
       } else if (err?.code === 'TIMEOUT' || err?.status === 408) {
-        setError('Dashboard request timed out. Please tap Retry to reload.');
+        setSyncError('Dashboard sync timed out. Data shown may be cached.');
       } else if (err?.code === 'NETWORK_ERROR') {
-        setError(err?.message || 'Network connection failed. Please check your connection and tap Retry.');
+        setSyncError('Network connection issue. Showing cached dashboard data.');
       } else {
-        setError(err?.message || 'Unable to load dashboard data.');
+        setSyncError('Unable to sync latest dashboard data from server.');
       }
     } finally {
       isFetchingRef.current = false;
@@ -95,7 +125,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   }, [loadDashboardData]);
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
     loadDashboardData(true);
   };
 
@@ -161,14 +190,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     };
   };
 
-  if (isLoading && !isRefreshing) {
-    return <FICLoadingState message="Loading dashboard..." />;
-  }
-
-  if (error) {
-    return <FICErrorState title="Dashboard Failure" message={error} onRetry={() => loadDashboardData()} />;
-  }
-
   const managerDisplayName = manager?.name || 'Manager';
   const managerDisplayRole = manager?.role
     ? manager.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/\bManager\b/i, 'Manager')
@@ -232,6 +253,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           />
         }
       >
+        {/* NON-BLOCKING SYNC BANNER */}
+        {syncError && (
+          <View style={[styles.syncBanner, { backgroundColor: isDark ? '#3B1A1A' : '#FEF2F2', borderColor: '#FCA5A5' }]}>
+            <Icon name="information-outline" size={16} color="#DC2626" />
+            <Text style={[styles.syncBannerText, { color: isDark ? '#FCA5A5' : '#B91C1C' }]} numberOfLines={2}>
+              {syncError}
+            </Text>
+            <TouchableOpacity onPress={() => loadDashboardData(true)} style={styles.syncBannerBtn} activeOpacity={0.7}>
+              <Text style={styles.syncBannerBtnText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* HERO BANNER - Cultural Landmarks with Scope Capsule */}
         <View style={styles.heroBannerCard}>
           <Image
@@ -610,8 +644,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         ) : (
           <View style={[styles.emptyActivityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Icon name="calendar-check-outline" size={28} color="#94A3B8" />
-            <Text style={[styles.emptyActivityText, { color: colors.textMuted }]}>No activities recorded today yet.</Text>
+            {isLoading ? (
+              <>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.emptyActivityText, { color: colors.textMuted }]}>Updating activities...</Text>
+              </>
+            ) : (
+              <>
+                <Icon name="calendar-check-outline" size={28} color="#94A3B8" />
+                <Text style={[styles.emptyActivityText, { color: colors.textMuted }]}>No activities recorded today yet.</Text>
+              </>
+            )}
           </View>
         )}
 
@@ -1262,5 +1305,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748B',
     fontWeight: '500',
+  },
+  syncBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12,
+    gap: 8,
+  },
+  syncBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  syncBannerBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#DC2626',
+    borderRadius: 6,
+  },
+  syncBannerBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

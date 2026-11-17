@@ -9,9 +9,47 @@ import { services } from '../../index';
 
 export class HttpDashboardRepository implements IDashboardRepository {
   private inFlightDashboardPromise: Promise<any> | null = null;
+  private memoryCachedSummary: Map<string, DashboardSummaryData> = new Map();
+  private memoryCachedActivities: Map<string, Activity[]> = new Map();
 
   private async getToken(): Promise<string | null> {
     return services.storageService.getAuthToken();
+  }
+
+  async getCachedSummary(managerId: string): Promise<DashboardSummaryData | null> {
+    const key = `DASHBOARD_SUMMARY_${managerId || 'DEFAULT'}`;
+    if (this.memoryCachedSummary.has(key)) {
+      return this.memoryCachedSummary.get(key) || null;
+    }
+    try {
+      const stored = await services.storageService.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored) as DashboardSummaryData;
+        this.memoryCachedSummary.set(key, parsed);
+        return parsed;
+      }
+    } catch (e) {
+      console.warn('[HttpDashboardRepository] Error reading cached summary:', e);
+    }
+    return null;
+  }
+
+  async getCachedActivities(managerId: string): Promise<Activity[] | null> {
+    const key = `DASHBOARD_ACTIVITIES_${managerId || 'DEFAULT'}`;
+    if (this.memoryCachedActivities.has(key)) {
+      return this.memoryCachedActivities.get(key) || null;
+    }
+    try {
+      const stored = await services.storageService.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Activity[];
+        this.memoryCachedActivities.set(key, parsed);
+        return parsed;
+      }
+    } catch (e) {
+      console.warn('[HttpDashboardRepository] Error reading cached activities:', e);
+    }
+    return null;
   }
 
   private async fetchDashboardData(): Promise<any> {
@@ -23,7 +61,7 @@ export class HttpDashboardRepository implements IDashboardRepository {
     this.inFlightDashboardPromise = apiClient
       .get<any>('/reports/dashboard', {
         token,
-        timeoutMs: 30000,
+        timeoutMs: 60000,
       })
       .then((res) => {
         // Reset in-flight promise after 3 seconds so subsequent manual refreshes hit the server
@@ -56,7 +94,7 @@ export class HttpDashboardRepository implements IDashboardRepository {
     const statusCounts = resData?.statusCounts || {};
     const todayActivities = resData?.todayActivities || resData?.recentActivities || [];
 
-    return {
+    const summaryData: DashboardSummaryData = {
       managerName: cachedManager?.name || 'Manager',
       role: resData?.role || cachedManager?.role || 'MANAGER',
       territoryName: cachedManager?.territoryName || cachedManager?.division || cachedManager?.state || 'Territory Scope',
@@ -74,6 +112,12 @@ export class HttpDashboardRepository implements IDashboardRepository {
       stateScope: cachedManager?.state || '',
       highPriorityAlerts: [],
     };
+
+    const key = `DASHBOARD_SUMMARY_${managerId || 'DEFAULT'}`;
+    this.memoryCachedSummary.set(key, summaryData);
+    services.storageService.setItem(key, JSON.stringify(summaryData)).catch(() => {});
+
+    return summaryData;
   }
 
   async getRecentActivities(managerId: string, limit: number = 10): Promise<Activity[]> {
@@ -114,7 +158,7 @@ export class HttpDashboardRepository implements IDashboardRepository {
         return ty - tx;
       });
 
-      return personalActivities.slice(0, limit).map((a: any, index: number) => {
+      const mappedActivities: Activity[] = personalActivities.slice(0, limit).map((a: any, index: number) => {
         const rawAction = a.action || a.activityType || 'Field Activity';
         const rawDetails = typeof a.details === 'string' ? a.details : (a.details?.message || a.details?.vendorName || a.details?.name || a.details?.shopName || '');
         const entityName = rawDetails || a.entityName || (a.newValue && typeof a.newValue === 'object' ? a.newValue.businessName : '') || a.module || rawAction;
@@ -140,6 +184,12 @@ export class HttpDashboardRepository implements IDashboardRepository {
           },
         };
       });
+
+      const key = `DASHBOARD_ACTIVITIES_${managerId || 'DEFAULT'}`;
+      this.memoryCachedActivities.set(key, mappedActivities);
+      services.storageService.setItem(key, JSON.stringify(mappedActivities)).catch(() => {});
+
+      return mappedActivities;
     } catch {
       return [];
     }
