@@ -10,6 +10,8 @@ export interface ApiRequestOptions {
   params?: Record<string, string | number | boolean>;
   timeoutMs?: number;
   token?: string | null;
+  skipCache?: boolean;
+  cacheTtlMs?: number;
 }
 
 export interface ApiResponseEnvelope<T> {
@@ -36,13 +38,28 @@ export const setApiAuthTokenProvider = (provider: () => Promise<string | null>) 
 
 export class ApiClient {
   private baseUrl: string;
+  private inFlightGets: Map<string, Promise<ApiResponseEnvelope<any>>> = new Map();
+  private getCache: Map<string, { envelope: ApiResponseEnvelope<any>; timestamp: number }> = new Map();
 
   constructor(baseUrl: string = ENV.apiBaseUrl) {
     this.baseUrl = baseUrl;
   }
 
+  public clearCache(): void {
+    this.getCache.clear();
+    this.inFlightGets.clear();
+  }
+
+  private getTtlForEndpoint(endpoint: string): number {
+    const ep = endpoint.toLowerCase();
+    if (ep.includes('/hierarchy') || ep.includes('/categories') || ep.includes('/territory') || ep.includes('/pincodes')) {
+      return 60000;
+    }
+    return 15000;
+  }
+
   async request<T>(endpoint: string, options: ApiRequestOptions = {}): Promise<ApiResponseEnvelope<T>> {
-    const { method = 'GET', headers = {}, body, params, token } = options;
+    const { method = 'GET', headers = {}, body, params, token, skipCache = false, cacheTtlMs } = options;
 
     const candidateUrls = this.getCandidateBaseUrls();
     let lastError: any = null;
@@ -78,92 +95,127 @@ export class ApiClient {
       requestHeaders.Authorization = `Bearer ${activeToken}`;
     }
 
-    const timeoutMs = options.timeoutMs || ENV.apiTimeoutMs || 30000;
+    const isGet = method === 'GET';
+    const authScope = activeToken ? String(activeToken).slice(-12) : 'anon';
+    const reqKey = `${authScope}:${method}:${endpoint}${queryString}`;
+    const ttl = typeof cacheTtlMs === 'number' ? cacheTtlMs : this.getTtlForEndpoint(endpoint);
 
-    for (const baseUrl of candidateUrls) {
-      const url = `${baseUrl}${endpoint}${queryString}`;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-      try {
-        const response = await fetch(url, {
-          method,
-          headers: requestHeaders,
-          body: body ? JSON.stringify(body) : undefined,
-          signal: controller.signal,
-        });
-        clearTimeout(timer);
-
-        const responseData = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw {
-            status: response.status,
-            code: responseData?.code || responseData?.error?.code || 'API_ERROR',
-            message: responseData?.message || responseData?.error?.message || 'API Request Failed',
-            fieldErrors: responseData?.error?.fieldErrors || [],
-          };
-        }
-
-        // Cache working base URL
-        this.baseUrl = baseUrl;
-
-        // Normalize response payload so response.data always provides the target entity/list
-        let normalizedData = responseData?.data;
-        if (normalizedData === undefined) {
-          if (responseData?.tasks !== undefined) {
-            normalizedData = responseData.tasks;
-          } else if (responseData?.vendors !== undefined) {
-            normalizedData = responseData.vendors;
-          } else if (responseData?.agents !== undefined) {
-            normalizedData = responseData.agents;
-          } else if (responseData?.managers !== undefined) {
-            normalizedData = responseData.managers;
-          } else if (responseData?.user !== undefined) {
-            normalizedData = responseData.user;
-          } else if (responseData?.stats !== undefined) {
-            normalizedData = responseData.stats;
-          } else if (responseData?.leaderboard !== undefined) {
-            normalizedData = responseData.leaderboard;
-          } else if (responseData?.reports !== undefined) {
-            normalizedData = responseData.reports;
-          } else {
-            normalizedData = responseData;
-          }
-        }
-
-        return {
-          ...responseData,
-          data: normalizedData as T,
-          status: response.status,
-          message: responseData?.message,
-        } as ApiResponseEnvelope<T>;
-      } catch (error: any) {
-        clearTimeout(timer);
-        if (error?.status) {
-          // It was a valid HTTP response with an error status (e.g. 401, 403, 404)
-          throw error;
-        }
-        if (error?.name === 'AbortError') {
-          throw {
-            status: 408,
-            code: 'TIMEOUT',
-            message: `Network request timed out after ${Math.round(timeoutMs / 1000)} seconds. Please check your connection and retry.`,
-          };
-        }
-        lastError = error;
-        // Network error or timeout, try next candidate baseUrl
-        continue;
+    if (isGet && !skipCache && ttl > 0) {
+      const cached = this.getCache.get(reqKey);
+      if (cached && Date.now() - cached.timestamp < ttl) {
+        return cached.envelope as ApiResponseEnvelope<T>;
       }
     }
 
-    throw (
-      lastError || {
-        status: 500,
-        code: 'NETWORK_ERROR',
-        message: 'Network connection failed or service unavailable.',
+    if (isGet && this.inFlightGets.has(reqKey)) {
+      return this.inFlightGets.get(reqKey) as Promise<ApiResponseEnvelope<T>>;
+    }
+
+    const timeoutMs = options.timeoutMs || ENV.apiTimeoutMs || 30000;
+
+    const executeRequest = (async (): Promise<ApiResponseEnvelope<T>> => {
+      for (const baseUrl of candidateUrls) {
+        const url = `${baseUrl}${endpoint}${queryString}`;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+          const response = await fetch(url, {
+            method,
+            headers: requestHeaders,
+            body: body ? JSON.stringify(body) : undefined,
+            signal: controller.signal,
+          });
+          clearTimeout(timer);
+
+          const responseData = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw {
+              status: response.status,
+              code: responseData?.code || responseData?.error?.code || 'API_ERROR',
+              message: responseData?.message || responseData?.error?.message || 'API Request Failed',
+              fieldErrors: responseData?.error?.fieldErrors || [],
+            };
+          }
+
+          // Cache working base URL
+          this.baseUrl = baseUrl;
+
+          // Normalize response payload so response.data always provides the target entity/list
+          let normalizedData = responseData?.data;
+          if (normalizedData === undefined) {
+            if (responseData?.tasks !== undefined) {
+              normalizedData = responseData.tasks;
+            } else if (responseData?.vendors !== undefined) {
+              normalizedData = responseData.vendors;
+            } else if (responseData?.agents !== undefined) {
+              normalizedData = responseData.agents;
+            } else if (responseData?.managers !== undefined) {
+              normalizedData = responseData.managers;
+            } else if (responseData?.user !== undefined) {
+              normalizedData = responseData.user;
+            } else if (responseData?.stats !== undefined) {
+              normalizedData = responseData.stats;
+            } else if (responseData?.leaderboard !== undefined) {
+              normalizedData = responseData.leaderboard;
+            } else if (responseData?.reports !== undefined) {
+              normalizedData = responseData.reports;
+            } else {
+              normalizedData = responseData;
+            }
+          }
+
+          const envelope: ApiResponseEnvelope<T> = {
+            ...responseData,
+            data: normalizedData as T,
+            status: response.status,
+            message: responseData?.message,
+          } as ApiResponseEnvelope<T>;
+
+          if (isGet && ttl > 0) {
+            this.getCache.set(reqKey, { envelope, timestamp: Date.now() });
+          } else if (!isGet) {
+            this.getCache.clear();
+          }
+
+          return envelope;
+        } catch (error: any) {
+          clearTimeout(timer);
+          if (error?.status) {
+            // It was a valid HTTP response with an error status (e.g. 401, 403, 404)
+            throw error;
+          }
+          if (error?.name === 'AbortError') {
+            throw {
+              status: 408,
+              code: 'TIMEOUT',
+              message: `Network request timed out after ${Math.round(timeoutMs / 1000)} seconds. Please check your connection and retry.`,
+            };
+          }
+          lastError = error;
+          // Network error or timeout, try next candidate baseUrl
+          continue;
+        }
       }
-    );
+
+      throw (
+        lastError || {
+          status: 500,
+          code: 'NETWORK_ERROR',
+          message: 'Network connection failed or service unavailable.',
+        }
+      );
+    })();
+
+    if (isGet) {
+      this.inFlightGets.set(reqKey, executeRequest);
+      return executeRequest.finally(() => {
+        this.inFlightGets.delete(reqKey);
+      });
+    }
+
+    return executeRequest;
   }
 
   get<T>(endpoint: string, options?: ApiRequestOptions): Promise<ApiResponseEnvelope<T>> {
