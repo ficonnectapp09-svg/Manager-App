@@ -29,7 +29,7 @@ export function resolveImageUrl(urlOrPath?: string | null): string {
   }
 
   const trimmed = urlOrPath.trim();
-  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') {
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined' || trimmed.includes('undefined') || trimmed.includes('/uploads/undefined')) {
     return '';
   }
 

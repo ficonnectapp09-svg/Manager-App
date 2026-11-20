@@ -212,6 +212,28 @@ export const registrationApi = {
   },
 
   /**
+   * Authoritative India Post verification & territory validation
+   */
+  async verifyPincode(pincode: string, state?: string, district?: string): Promise<{
+    success: boolean;
+    valid: boolean;
+    postOffices?: Array<{ name: string; branchType: string; district: string; state: string }>;
+    message?: string;
+  }> {
+    try {
+      const cleanParams: Record<string, string> = { pincode };
+      if (state) cleanParams.state = state;
+      if (district) cleanParams.district = district;
+      const res = await apiClient.get<any>('/location/verify-pincode', {
+        params: cleanParams
+      });
+      return res.data || res;
+    } catch (err: any) {
+      return { success: false, valid: false, message: err?.message || 'Verification failed' };
+    }
+  },
+
+  /**
    * Upload Document from URI via /api/auth/upload-document
    */
   async uploadDocument(fileUri: string, fileName?: string): Promise<string> {
