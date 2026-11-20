@@ -31,18 +31,23 @@ export interface TasksScreenProps {
 
 export type TaskStatusFilter = 'ALL' | TaskStatus;
 
+// In-memory screen cache for Instant Frame-0 SWR rendering
+let memoryCachedTasks: { data: Task[]; timestamp: number; managerId: string } | null = null;
+
 export const TasksScreen: React.FC<TasksScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
   const { colors, isDark } = useTheme();
   const { manager } = useAuth();
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const currentMgrId = manager?.id || '';
+  const initialCached = (memoryCachedTasks && memoryCachedTasks.managerId === currentMgrId) ? memoryCachedTasks.data : [];
+  const [allTasks, setAllTasks] = useState<Task[]>(initialCached);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<TaskStatusFilter>('ALL');
   const [selectedPriority, setSelectedPriority] = useState<'ALL' | Priority>('ALL');
   const [showPriorityModal, setShowPriorityModal] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(initialCached.length === 0);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,12 +57,13 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
     async (isRefresh = false) => {
       if (isFetchingRef.current) return;
       isFetchingRef.current = true;
-      if (!isRefresh) setIsLoading(true);
+      if (!isRefresh && allTasks.length === 0) setIsLoading(true);
       setError(null);
       try {
         const managerId = manager?.id || '';
         const list = await services.taskRepository.getTasks(managerId);
         setAllTasks(list);
+        memoryCachedTasks = { data: list, timestamp: Date.now(), managerId };
         setError(null);
       } catch (err: any) {
         console.warn('[TasksScreen] Error loading tasks:', err);
@@ -76,7 +82,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
         setIsRefreshing(false);
       }
     },
-    [manager]
+    [manager, allTasks.length]
   );
 
   useEffect(() => {
@@ -101,6 +107,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
       fetchTasks(true);
     });
     return () => {
+      unsubEntity();
       unsub1();
       unsub2();
       unsub3();
@@ -338,11 +345,11 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
     );
   };
 
-  if (isLoading && !isRefreshing) {
+  if (isLoading && !isRefreshing && allTasks.length === 0) {
     return <FICLoadingState message="Loading field tasks..." />;
   }
 
-  if (error) {
+  if (error && allTasks.length === 0) {
     return (
       <FICErrorState
         title="Unable to load tasks"

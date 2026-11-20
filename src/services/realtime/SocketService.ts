@@ -4,6 +4,7 @@
  * Fully synchronized with Manager Website and Shared Backend Event Bus
  */
 import { ENV } from '../../constants/env';
+import { apiClient } from '../api/ApiClient';
 
 export type SocketEventType =
   | 'vendor.updated'
@@ -227,6 +228,12 @@ class SocketService {
       changedFields: rawPayload.changedFields,
       timestamp: rawPayload.timestamp || new Date().toISOString(),
     };
+
+    // Immediately invalidate API client cache for this entity so subsequent fetches hit fresh data
+    const targetEntity = entity || (rawEvent ? rawEvent.split('.')[0].split('_')[0].toLowerCase() : '');
+    if (targetEntity) {
+      apiClient.invalidateEntity(targetEntity);
+    }
 
     // 1. Dispatch exact event name
     if (rawEvent) {

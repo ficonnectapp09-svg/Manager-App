@@ -53,30 +53,44 @@ const CATEGORIES = [
   'Textiles',
 ];
 
+// In-memory screen cache for Instant Frame-0 SWR rendering
+let memoryCachedVendors: { data: Vendor[]; timestamp: number; managerId: string } | null = null;
+
 export const VendorsScreen: React.FC<VendorsScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
   const { colors, isDark } = useTheme();
   const { manager } = useAuth();
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [allVendors, setAllVendors] = useState<Vendor[]>([]);
+  const currentMgrId = manager?.id || '';
+  const initialCached = (memoryCachedVendors && memoryCachedVendors.managerId === currentMgrId) ? memoryCachedVendors.data : [];
+  const [vendors, setVendors] = useState<Vendor[]>(initialCached);
+  const [allVendors, setAllVendors] = useState<Vendor[]>(initialCached);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [selectedFilter, setSelectedFilter] = useState<FilterChipType>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<SortByType>('DEFAULT');
   const [showCategoryModal, setShowCategoryModal] = useState<boolean>(false);
   const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(initialCached.length === 0);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const isFetchingRef = useRef<boolean>(false);
+
+  // Debounce search query by 300ms to eliminate keystroke request spam
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchVendors = useCallback(
     async (isRefresh = false) => {
       if (isFetchingRef.current) return;
       isFetchingRef.current = true;
-      if (!isRefresh) setIsLoading(true);
+      if (!isRefresh && allVendors.length === 0) setIsLoading(true);
       setError(null);
       try {
         const filterOpts: VendorFilterOptions = {
@@ -85,39 +99,35 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
           pincodeId: manager?.role === 'STATE_MANAGER' ? undefined : manager?.pincodeId,
         };
 
-        const hasSearch = Boolean(searchQuery.trim());
-        const isFilterModified = selectedFilter !== 'ALL';
-        const queryOpts: VendorFilterOptions = { ...filterOpts };
+        // Single authoritative request; eliminate duplicate Promise.all network calls
+        const totalList = await services.vendorRepository.getVendors(filterOpts);
+        setAllVendors(totalList);
+        memoryCachedVendors = { data: totalList, timestamp: Date.now(), managerId: manager?.id || '' };
 
-        if (hasSearch) {
-          queryOpts.searchQuery = searchQuery.trim();
+        // Client-side instant filtering for debounced search and active states
+        let filteredList = totalList;
+        if (debouncedSearch.trim()) {
+          const q = debouncedSearch.trim().toLowerCase();
+          filteredList = filteredList.filter(
+            (v) =>
+              (v.businessName || '').toLowerCase().includes(q) ||
+              (v.vendorName || '').toLowerCase().includes(q) ||
+              (v.phone || '').includes(q) ||
+              (v.category || '').toLowerCase().includes(q)
+          );
         }
 
         if (selectedFilter === 'ACTIVE') {
-          queryOpts.activeState = 'ACTIVE';
+          filteredList = filteredList.filter(
+            (v) => v.status === VendorStatus.ONBOARDED || (v as any).activeState === 'ACTIVE'
+          );
         } else if (selectedFilter === 'NOT_INTERESTED') {
-          queryOpts.status = VendorStatus.NOT_INTERESTED;
+          filteredList = filteredList.filter((v) => v.status === VendorStatus.NOT_INTERESTED);
         } else if (selectedFilter === 'INACTIVE') {
-          queryOpts.activeState = 'INACTIVE';
+          filteredList = filteredList.filter(
+            (v) => v.status === VendorStatus.LEAD || (v as any).activeState === 'INACTIVE'
+          );
         }
-
-        let totalList: Vendor[];
-        let filteredList: Vendor[];
-
-        if (hasSearch || isFilterModified) {
-          const results = await Promise.all([
-            services.vendorRepository.getVendors(filterOpts),
-            services.vendorRepository.getVendors(queryOpts),
-          ]);
-          totalList = results[0];
-          filteredList = results[1];
-        } else {
-          // Default: exactly one clean call to getVendors
-          totalList = await services.vendorRepository.getVendors(filterOpts);
-          filteredList = totalList;
-        }
-
-        setAllVendors(totalList);
 
         if (selectedCategory !== 'ALL') {
           filteredList = filteredList.filter(
@@ -154,7 +164,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
         setIsRefreshing(false);
       }
     },
-    [manager, searchQuery, selectedFilter, selectedCategory, sortBy]
+    [manager, debouncedSearch, selectedFilter, selectedCategory, sortBy, allVendors.length]
   );
 
   useEffect(() => {
@@ -225,11 +235,11 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
 
   const isFilterActive = selectedFilter !== 'ALL' || selectedCategory !== 'ALL' || sortBy !== 'DEFAULT';
 
-  if (isLoading && !isRefreshing) {
+  if (isLoading && !isRefreshing && allVendors.length === 0) {
     return <FICLoadingState message="Loading territory vendors..." />;
   }
 
-  if (error) {
+  if (error && allVendors.length === 0) {
     return (
       <FICErrorState
         title="Vendors Load Failure"

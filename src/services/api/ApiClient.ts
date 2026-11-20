@@ -50,6 +50,36 @@ export class ApiClient {
     this.inFlightGets.clear();
   }
 
+  public invalidateEndpoint(endpointPattern: string): void {
+    const pattern = endpointPattern.toLowerCase();
+    for (const key of this.getCache.keys()) {
+      if (key.toLowerCase().includes(pattern)) {
+        this.getCache.delete(key);
+      }
+    }
+  }
+
+  public invalidateEntity(entity: string): void {
+    if (!entity) return;
+    const norm = entity.toLowerCase().replace(/s$/, '');
+    const patterns = [norm, `${norm}s`];
+    if (norm === 'task') patterns.push('qc-tasks');
+    if (norm === 'issue') patterns.push('tickets');
+    if (norm === 'manager') patterns.push('user', 'profile');
+    if (norm === 'vendor') patterns.push('shops');
+
+    for (const key of this.getCache.keys()) {
+      const lower = key.toLowerCase();
+      if (patterns.some(p => lower.includes(p))) {
+        this.getCache.delete(key);
+      }
+    }
+    // Also invalidate aggregated dashboard/stats caches
+    this.invalidateEndpoint('/reports/dashboard');
+    this.invalidateEndpoint('/reports');
+    this.invalidateEndpoint('/stats');
+  }
+
   private getTtlForEndpoint(endpoint: string): number {
     const ep = endpoint.toLowerCase();
     if (ep.includes('/hierarchy') || ep.includes('/categories') || ep.includes('/territory') || ep.includes('/pincodes')) {

@@ -30,22 +30,36 @@ export interface IssuesScreenProps {
 
 export type StatusFilterOption = 'ALL' | IssueStatus.OPEN | IssueStatus.IN_PROGRESS | IssueStatus.RESOLVED;
 
+// In-memory screen cache for Instant Frame-0 SWR rendering
+let memoryCachedIssues: { data: Issue[]; timestamp: number; managerId: string } | null = null;
+
 export const IssuesScreen: React.FC<IssuesScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
   const { colors, isDark } = useTheme();
   const { manager } = useAuth();
-  const [issues, setIssues] = useState<Issue[]>([]);
+  const currentMgrId = manager?.id || '';
+  const initialCached = (memoryCachedIssues && memoryCachedIssues.managerId === currentMgrId) ? memoryCachedIssues.data : [];
+  const [issues, setIssues] = useState<Issue[]>(initialCached);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [selectedFilter, setSelectedFilter] = useState<StatusFilterOption>('ALL');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(initialCached.length === 0);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Debounce search query by 300ms to eliminate request flooding on keystrokes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const fetchIssues = useCallback(
     async (isRefresh = false) => {
-      if (!isRefresh) setIsLoading(true);
+      if (!isRefresh && issues.length === 0) setIsLoading(true);
       setError(null);
       try {
         const managerId = manager?.id || 'mgr-001';
@@ -54,9 +68,10 @@ export const IssuesScreen: React.FC<IssuesScreenProps> = ({
           managerId,
           filterStatus,
           undefined,
-          searchQuery.trim()
+          debouncedSearch.trim()
         );
         setIssues(fetchedList);
+        memoryCachedIssues = { data: fetchedList, timestamp: Date.now(), managerId };
       } catch (err) {
         setError('Unable to load issues');
       } finally {
@@ -64,7 +79,7 @@ export const IssuesScreen: React.FC<IssuesScreenProps> = ({
         setIsRefreshing(false);
       }
     },
-    [manager, selectedFilter, searchQuery]
+    [manager, selectedFilter, debouncedSearch, issues.length]
   );
 
   useEffect(() => {
@@ -131,11 +146,11 @@ export const IssuesScreen: React.FC<IssuesScreenProps> = ({
     { id: IssueStatus.RESOLVED, label: 'Resolved' },
   ];
 
-  if (isLoading && !isRefreshing) {
+  if (isLoading && !isRefreshing && issues.length === 0) {
     return <FICLoadingState message="Loading reported issues..." />;
   }
 
-  if (error) {
+  if (error && issues.length === 0) {
     return (
       <FICErrorState
         title="Unable to load issues"

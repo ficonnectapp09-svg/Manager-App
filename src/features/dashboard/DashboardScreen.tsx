@@ -115,11 +115,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     const unsubTask = socketService.subscribe('task', () => loadDashboardData(true));
     const unsubVendor = socketService.subscribe('vendor', () => loadDashboardData(true));
     const unsubManager = socketService.subscribe('manager', () => loadDashboardData(true));
+    const unsubIssue = socketService.subscribe('issue' as any, () => loadDashboardData(true));
     const unsubReconnect = socketService.onReconnect(() => loadDashboardData(true));
     return () => {
       unsubTask();
       unsubVendor();
       unsubManager();
+      unsubIssue();
       unsubReconnect();
     };
   }, [loadDashboardData]);
