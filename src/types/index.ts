@@ -248,11 +248,26 @@ export interface FieldAgent {
   stateId: string;
   districtId: string;
   divisionId: string;
-  status: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE';
+  status: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE' | string;
   assignedManager: string;
   assignedManagerId: string;
   profileImage?: string;
   createdAt: string;
+  level?: string;
+  role?: string;
+  roleLevel?: string;
+  email?: string;
+  pincode?: string;
+  district?: string;
+  division?: string;
+  state?: string;
+  vendorOnboardings?: number;
+  vendorsCount?: number;
+  kycStatus?: string;
+  agentCode?: string;
+  agentId?: string;
+  jurisdiction?: string;
+  assignedArea?: string;
 }
 
 export enum IssueStatus {

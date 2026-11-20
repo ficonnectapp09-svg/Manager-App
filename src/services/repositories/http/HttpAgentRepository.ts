@@ -14,12 +14,16 @@ export class HttpAgentRepository implements IAgentRepository {
   async getAgentsInScope(
     requestingManagerId: string,
     query?: string,
-    statusFilter: AgentStatusFilter = 'ALL'
+    statusFilter: AgentStatusFilter = 'ACTIVE'
   ): Promise<FieldAgent[]> {
     const token = await this.getToken();
     const params: Record<string, string | number | boolean> = { requestingManagerId };
     if (query) params.search = query;
-    if (statusFilter !== 'ALL') params.status = statusFilter;
+    if (statusFilter && statusFilter !== 'ALL') {
+      params.status = statusFilter.toLowerCase();
+    } else {
+      params.status = 'active';
+    }
 
     const response = await apiClient.get<FieldAgent[]>('/operations/agents', { token, params });
     const list = Array.isArray(response.data) ? response.data : (Array.isArray((response as any).agents) ? (response as any).agents : []);

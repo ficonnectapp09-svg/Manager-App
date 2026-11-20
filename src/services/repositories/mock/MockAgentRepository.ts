@@ -13,7 +13,7 @@ export class MockAgentRepository implements IAgentRepository {
   async getAgentsInScope(
     requestingManagerId: string,
     query?: string,
-    statusFilter?: AgentStatusFilter
+    statusFilter: AgentStatusFilter = 'ACTIVE'
   ): Promise<FieldAgent[]> {
     return new Promise(resolve => {
       setTimeout(() => {
@@ -26,9 +26,11 @@ export class MockAgentRepository implements IAgentRepository {
           results = results.filter(a => a.stateId === 'st-tn-01');
         }
 
-        // Status filter
+        // Status filter - Active only by default
         if (statusFilter && statusFilter !== 'ALL') {
           results = results.filter(a => a.status === statusFilter);
+        } else {
+          results = results.filter(a => a.status === 'ACTIVE');
         }
 
         // Search query filter (name, phone, pincode)
