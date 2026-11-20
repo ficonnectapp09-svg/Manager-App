@@ -18,9 +18,9 @@ export interface AppEnvironment {
 // Authoritative production configuration aligned with Manager Website
 export const ENV: AppEnvironment = {
   envName: 'production',
-  serverUrl: 'https://connect-manager.onrender.com',
-  apiBaseUrl: 'https://connect-manager.onrender.com/api',
-  socketUrl: 'wss://connect-manager.onrender.com/ws',
+  serverUrl: (process.env['APP_PUBLIC_URL'] || process.env['API_BASE_URL']?.replace(/\/api\/?$/, '') || 'https://manager-website.onrender.com'),
+  apiBaseUrl: (process.env['API_BASE_URL'] || 'https://manager-website.onrender.com/api'),
+  socketUrl: (process.env['SOCKET_URL'] || 'wss://manager-website.onrender.com/ws'),
   googleMapsApiKey: 'AIzaSyA_DemoGoogleMapsApiKeyForForgeIndia2026',
   mongoDbAtlasUri: '',
   enableAnalytics: false,

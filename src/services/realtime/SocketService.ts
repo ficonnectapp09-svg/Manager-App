@@ -58,8 +58,8 @@ class SocketService {
 
   private getWsUrl(token: string): string {
     const apiBase = ENV.apiBaseUrl;
-    // Derive host from apiBase (e.g. https://connect-manager.onrender.com/api -> connect-manager.onrender.com)
-    let host = 'connect-manager.onrender.com';
+    // Derive host from apiBase (e.g. https://manager-website.onrender.com/api -> manager-website.onrender.com)
+    let host = 'manager-website.onrender.com';
     try {
       const match = apiBase.match(/https?:\/\/([^\/]+)/);
       if (match && match[1]) {
